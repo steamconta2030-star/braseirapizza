@@ -1,24 +1,17 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import { ArrowLeft, Check, CheckCircle2, Flame, Minus, Plus, ShoppingBag, Trash2, X } from "lucide-react";
-import { initialCategories, initialProducts } from "../data/catalog";
-import { initialCrusts, initialExtras, initialFlavors, initialSizes } from "../data/pizza";
 import { initialZones } from "../data/delivery";
 import { usePersistentState } from "../hooks/usePersistentState";
-import type { CartItem, Category, DeliveryZone, Order, PizzaFlavor, PizzaOption, PizzaSize, Product } from "../types";
+import { useOnlineMenu } from "../hooks/useOnlineMenu";
+import type { CartItem, Order, Product } from "../types";
 
 const money = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 
 export default function PublicMenu({ onBack }: { onBack: () => void }) {
-  const [products] = usePersistentState<Product[]>("braseira:products", initialProducts);
-  const [categories] = usePersistentState<Category[]>("braseira:categories", initialCategories);
-  const [sizes] = usePersistentState<PizzaSize[]>("braseira:pizza-sizes", initialSizes);
-  const [flavors] = usePersistentState<PizzaFlavor[]>("braseira:pizza-flavors", initialFlavors);
-  const [crusts] = usePersistentState<PizzaOption[]>("braseira:pizza-crusts", initialCrusts);
-  const [extras] = usePersistentState<PizzaOption[]>("braseira:pizza-extras", initialExtras);
+  const { products, categories, sizes, flavors, crusts, extras, zones, online } = useOnlineMenu();
   const [cart, setCart] = usePersistentState<CartItem[]>("braseira:cart", []);
   const [orders, setOrders] = usePersistentState<Order[]>("braseira:orders", []);
-  const [zones] = usePersistentState<DeliveryZone[]>("braseira:delivery-zones", initialZones);
   const [activeCategory, setActiveCategory] = useState("all");
   const [builderOpen, setBuilderOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
@@ -42,6 +35,12 @@ export default function PublicMenu({ onBack }: { onBack: () => void }) {
   const checkoutFee = checkoutDeliveryType === "delivery" ? (selectedZone?.fee ?? 0) : 0;
   const filteredProducts = useMemo(() => products.filter((item) => item.active && (activeCategory === "all" || item.categoryId === activeCategory)), [products, activeCategory]);
 
+  useEffect(() => {
+    if (!sizes.some((item) => item.id === sizeId)) setSizeId(sizes.find((item) => item.name === "Grande")?.id ?? sizes[0]?.id ?? "");
+    if (!crusts.some((item) => item.id === crustId)) setCrustId(crusts[0]?.id ?? "");
+    if (!zones.some((item) => item.id === checkoutZoneId)) setCheckoutZoneId(zones[0]?.id ?? initialZones[0].id);
+  }, [checkoutZoneId, crustId, crusts, sizeId, sizes, zones]);
+
   function selectFlavor(id: string) {
     setFlavorIds((current) => current.includes(id) ? current.filter((item) => item !== id) : current.length >= size.maxFlavors ? [...current.slice(1), id] : [...current, id]);
   }
@@ -50,7 +49,7 @@ export default function PublicMenu({ onBack }: { onBack: () => void }) {
     const crust = crusts.find((item) => item.id === crustId);
     const selectedExtras = extras.filter((item) => extraIds.includes(item.id));
     setCart((current) => [...current, { id: crypto.randomUUID(), name: `Pizza ${size.name}`, detail: `${chosenFlavors.map((item) => item.name).join(" + ")} • ${crust?.name}${selectedExtras.length ? ` • ${selectedExtras.map((item) => item.name).join(", ")}` : ""}`, price: pizzaTotal, quantity: 1 }]);
-    setBuilderOpen(false); setCartOpen(true); setFlavorIds([]); setExtraIds([]); setCrustId("sem-borda");
+    setBuilderOpen(false); setCartOpen(true); setFlavorIds([]); setExtraIds([]); setCrustId(crusts[0]?.id ?? "");
   }
   function addProduct(product: Product) {
     setCart((current) => { const existing = current.find((item) => item.id === product.id); return existing ? current.map((item) => item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item) : [...current, { id: product.id, name: product.name, detail: product.description, price: product.price, quantity: 1 }]; });
@@ -65,7 +64,7 @@ export default function PublicMenu({ onBack }: { onBack: () => void }) {
   }
 
   return <div className="public-menu">
-    <header className="public-header"><button className="back-admin" onClick={onBack}><ArrowLeft size={17} /> Administração</button><div className="public-brand"><span><Flame size={22} /></span><div><strong>Braseira Pizza</strong><small>Feita no fogo. Feita para você.</small></div></div><button className="cart-button" onClick={() => setCartOpen(true)}><ShoppingBag size={19} /><span>{cartCount}</span><b>{money.format(cartTotal)}</b></button></header>
+    <header className="public-header"><button className="back-admin" onClick={onBack}><ArrowLeft size={17} /> Administração</button><div className="public-brand"><span><Flame size={22} /></span><div><strong>Braseira Pizza</strong><small>{online ? "Cardápio online • Feita no fogo" : "Feita no fogo. Feita para você."}</small></div></div><button className="cart-button" onClick={() => setCartOpen(true)}><ShoppingBag size={19} /><span>{cartCount}</span><b>{money.format(cartTotal)}</b></button></header>
     <section className="public-hero"><div><small>🔥 FORNO QUENTE • ENTREGA RÁPIDA</small><h1>Sua pizza, do seu jeito.</h1><p>Escolha o tamanho, combine seus sabores favoritos e deixe o resto com a Braseira.</p><button onClick={() => setBuilderOpen(true)}>Montar minha pizza <Plus size={18} /></button></div><div className="hero-pizza"><i /><span>Até 3 sabores</span></div></section>
     <nav className="category-pills"><button className={activeCategory === "all" ? "active" : ""} onClick={() => setActiveCategory("all")}>Todos</button>{categories.filter((item) => item.active).map((item) => <button key={item.id} className={activeCategory === item.id ? "active" : ""} onClick={() => setActiveCategory(item.id)}>{item.name}</button>)}</nav>
     <main className="menu-content"><div className="menu-title"><div><small>NOSSO CARDÁPIO</small><h2>Escolha o seu pedido</h2></div><span>{filteredProducts.length + 1} opções disponíveis</span></div><div className="menu-grid"><article className="menu-card build-card"><div className="menu-photo pizza-photo"><span>Monte do seu jeito</span></div><div><small>PIZZAS</small><h3>Monte sua pizza</h3><p>Escolha tamanho, sabores, borda e adicionais.</p><footer><strong>A partir de {money.format(Math.min(...sizes.map((item) => item.basePrice)))}</strong><button onClick={() => setBuilderOpen(true)}>Montar</button></footer></div></article>{filteredProducts.map((product) => <article className="menu-card" key={product.id}><div className="menu-photo">{product.imageUrl ? <img src={product.imageUrl} alt={product.name} /> : <Flame size={34} />}</div><div><small>{categories.find((item) => item.id === product.categoryId)?.name}</small><h3>{product.name}</h3><p>{product.description}</p><footer><strong>{money.format(product.price)}</strong><button onClick={() => addProduct(product)}><Plus size={18} /></button></footer></div></article>)}</div></main>
