@@ -92,3 +92,5 @@ main { min-width: 0; }.topbar { height: 84px; background: #fffdfa; border-bottom
 .store-operation.closed > div > span { background:#f5dcd7; }
 .store-operation.closed button { color:white; border:1px solid #378144; background:#408d4c; }
 @media (max-width:650px) { .store-settings-card > footer, .store-operation { align-items:stretch; flex-direction:column; }.store-settings-card > footer button { justify-content:center; } }
+.order-success .whatsapp-order { width:100%; display:flex; justify-content:center; align-items:center; gap:8px; margin-bottom:9px; background:#208b4c; }
+.order-success .back-menu { width:100%; color:#6f625a; background:#eee6df; }
