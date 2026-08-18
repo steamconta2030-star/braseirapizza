@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
-import { Banknote, Bike, ChefHat, ClipboardList, Cloud, CookingPot, Database, Eye, EyeOff, Flame, LayoutDashboard, PackagePlus, Pizza, Search, Store, Tags } from "lucide-react";
+import { Banknote, Bike, ChefHat, ClipboardList, Cloud, CookingPot, Database, Eye, EyeOff, Flame, LayoutDashboard, PackagePlus, Pizza, Save, Search, Settings, Store, Tags } from "lucide-react";
 import PizzaSettings from "./components/PizzaSettings";
 import PublicMenu from "./components/PublicMenu";
 import OrdersBoard from "./components/OrdersBoard";
@@ -21,7 +21,10 @@ export default function App() {
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [showForm, setShowForm] = useState(false);
   const [storeOpen, setStoreOpen] = useState(true);
-  const [section, setSection] = useState<"dashboard" | "kitchen" | "cash" | "products" | "pizza" | "orders" | "delivery" | "public">("public");
+  const [storeWhatsapp, setStoreWhatsapp] = useState("");
+  const [minimumOrder, setMinimumOrder] = useState(0);
+  const [settingsSaved, setSettingsSaved] = useState(false);
+  const [section, setSection] = useState<"dashboard" | "kitchen" | "cash" | "products" | "pizza" | "orders" | "delivery" | "settings" | "public">("public");
 
   const visible = useMemo(() => products.filter((product) => {
     const matchesText = `${product.name} ${product.description}`.toLowerCase().includes(query.toLowerCase());
@@ -33,11 +36,11 @@ export default function App() {
     Promise.all([
       supabase.from("categories").select("id,name,active").eq("store_id", STORE_ID).order("position"),
       supabase.from("products").select("id,category_id,name,description,price,image_path,active").eq("store_id", STORE_ID).order("position"),
-      supabase.from("stores").select("accepting_orders").eq("id", STORE_ID).single(),
+      supabase.from("stores").select("accepting_orders,whatsapp,minimum_order").eq("id", STORE_ID).single(),
     ]).then(([categoryResult, productResult, storeResult]) => {
       if (categoryResult.data) setCategories(categoryResult.data.map((row) => ({ id: row.id, name: row.name, active: row.active })));
       if (productResult.data) setProducts(productResult.data.map((row) => ({ id: row.id, categoryId: row.category_id, name: row.name, description: row.description, price: Number(row.price), imageUrl: row.image_path ?? "", active: row.active })));
-      if (storeResult.data) setStoreOpen(storeResult.data.accepting_orders);
+      if (storeResult.data) { setStoreOpen(storeResult.data.accepting_orders); setStoreWhatsapp(storeResult.data.whatsapp ?? ""); setMinimumOrder(Number(storeResult.data.minimum_order ?? 0)); }
     });
   }, []);
 
@@ -65,8 +68,16 @@ export default function App() {
 
   async function toggleStore() { if (!supabase) return; const next = !storeOpen; setStoreOpen(next); const { error } = await supabase.from("stores").update({ accepting_orders: next, updated_at: new Date().toISOString() }).eq("id", STORE_ID); if (error) setStoreOpen(!next); }
 
+  async function saveStoreSettings(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault(); if (!supabase) return;
+    setSettingsSaved(false);
+    const { error } = await supabase.from("stores").update({ whatsapp: storeWhatsapp.trim(), minimum_order: minimumOrder, updated_at: new Date().toISOString() }).eq("id", STORE_ID);
+    if (error) { window.alert("Não foi possível salvar as configurações."); return; }
+    setSettingsSaved(true); window.setTimeout(() => setSettingsSaved(false), 2500);
+  }
+
   if (section === "public") return <PublicMenu onBack={() => setSection("dashboard")} />;
-  const sectionTitle = section === "dashboard" ? "Visão geral" : section === "kitchen" ? "Cozinha" : section === "cash" ? "Caixa e relatórios" : section === "pizza" ? "Montagem de pizzas" : section === "orders" ? "Central de pedidos" : section === "delivery" ? "Entrega e retirada" : "Catálogo";
+  const sectionTitle = section === "dashboard" ? "Visão geral" : section === "kitchen" ? "Cozinha" : section === "cash" ? "Caixa e relatórios" : section === "pizza" ? "Montagem de pizzas" : section === "orders" ? "Central de pedidos" : section === "delivery" ? "Entrega e retirada" : section === "settings" ? "Configurações da loja" : "Catálogo";
 
   return <AdminAuth onBack={() => setSection("public")}>
     <div className="app-shell">
@@ -80,15 +91,16 @@ export default function App() {
           <button className={section === "pizza" ? "active" : ""} onClick={() => setSection("pizza")}><ChefHat size={19} /> Montagem</button>
           <button className={section === "orders" ? "active" : ""} onClick={() => setSection("orders")}><ClipboardList size={19} /> Pedidos</button>
           <button className={section === "delivery" ? "active" : ""} onClick={() => setSection("delivery")}><Bike size={19} /> Entregas</button>
+          <button className={section === "settings" ? "active" : ""} onClick={() => setSection("settings")}><Settings size={19} /> Configurações</button>
           <button onClick={() => setSection("public")}><Store size={19} /> Ver cardápio</button>
           <button onClick={addCategory}><Tags size={19} /> Categorias</button>
         </nav>
-        <div className="wave-card"><small>NOVA FASE</small><strong>Onda 9 de 12</strong><span>Controle da loja</span><div><i style={{ width: "75%" }} /></div></div>
+        <div className="wave-card"><small>NOVA FASE</small><strong>Onda 10 de 12</strong><span>Configurações comerciais</span><div><i style={{ width: "83%" }} /></div></div>
       </aside>
 
       <main>
         <header className="topbar"><div><span>Painel administrativo</span><strong>{sectionTitle}</strong></div><div className="topbar-actions"><span className="data-status" title={isSupabaseConfigured ? "Supabase conectado" : "Os dados ficam salvos neste navegador"}>{isSupabaseConfigured ? <Cloud size={15} /> : <Database size={15} />}{isSupabaseConfigured ? "Nuvem conectada" : "Salvo neste dispositivo"}</span><button className={`store-status ${storeOpen ? "" : "closed"}`} onClick={toggleStore}><i /> {storeOpen ? "Loja aberta" : "Loja fechada"}</button></div></header>
-        {section === "dashboard" ? <Operations view="dashboard" /> : section === "kitchen" ? <Operations view="kitchen" /> : section === "cash" ? <Operations view="cash" /> : section === "pizza" ? <PizzaSettings /> : section === "orders" ? <OrdersBoard /> : section === "delivery" ? <DeliverySettings /> : <section className="content">
+        {section === "dashboard" ? <Operations view="dashboard" /> : section === "kitchen" ? <Operations view="kitchen" /> : section === "cash" ? <Operations view="cash" /> : section === "pizza" ? <PizzaSettings /> : section === "orders" ? <OrdersBoard /> : section === "delivery" ? <DeliverySettings /> : section === "settings" ? <section className="content"><div className="title-row"><div><p className="eyebrow">OPERAÇÃO DA LOJA</p><h1>Configurações comerciais</h1><p>Defina os dados usados no atendimento e no fechamento dos pedidos.</p></div></div><form className="store-settings-card" onSubmit={saveStoreSettings}><div className={`store-operation ${storeOpen ? "open" : "closed"}`}><div><span><Store size={21} /></span><div><strong>{storeOpen ? "Loja aberta" : "Loja fechada"}</strong><small>{storeOpen ? "O cardápio está aceitando novos pedidos." : "Novos pedidos estão temporariamente bloqueados."}</small></div></div><button type="button" onClick={toggleStore}>{storeOpen ? "Fechar loja" : "Abrir loja"}</button></div><label>WhatsApp da loja<input value={storeWhatsapp} onChange={(event) => setStoreWhatsapp(event.target.value)} inputMode="tel" placeholder="Ex.: (31) 99999-9999" /><small>Será utilizado nos próximos recursos de contato com o cliente.</small></label><label>Pedido mínimo<input value={minimumOrder} onChange={(event) => setMinimumOrder(Math.max(0, Number(event.target.value)))} type="number" min="0" step="0.01" /><small>Use zero caso não queira exigir um valor mínimo.</small></label><footer><span>{settingsSaved ? "Configurações salvas com sucesso." : "As alterações serão aplicadas ao cardápio online."}</span><button className="primary" type="submit"><Save size={17} /> Salvar configurações</button></footer></form></section> : <section className="content">
           <div className="title-row"><div><p className="eyebrow">GESTÃO DO CARDÁPIO</p><h1>Produtos</h1><p>Cadastre os itens que aparecerão no cardápio da Braseira Pizza.</p></div><button className="primary" onClick={() => setShowForm(true)}><PackagePlus size={18} /> Novo produto</button></div>
 
           <div className="stats">
