@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
-import { Cloud, Database, Eye, EyeOff, Flame, LayoutDashboard, PackagePlus, Pizza, Search, Tags } from "lucide-react";
+import { ChefHat, Cloud, Database, Eye, EyeOff, Flame, LayoutDashboard, PackagePlus, Pizza, Search, Tags } from "lucide-react";
+import PizzaSettings from "./components/PizzaSettings";
 import { initialCategories, initialProducts } from "./data/catalog";
 import { usePersistentState } from "./hooks/usePersistentState";
 import { isSupabaseConfigured } from "./lib/supabase";
@@ -13,6 +14,7 @@ export default function App() {
   const [query, setQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [showForm, setShowForm] = useState(false);
+  const [section, setSection] = useState<"products" | "pizza">("pizza");
 
   const visible = useMemo(() => products.filter((product) => {
     const matchesText = `${product.name} ${product.description}`.toLowerCase().includes(query.toLowerCase());
@@ -35,15 +37,16 @@ export default function App() {
         <div className="brand"><span className="brand-mark"><Flame size={24} /></span><div><strong>Braseira</strong><small>Pizza • Administração</small></div></div>
         <nav>
           <button><LayoutDashboard size={19} /> Visão geral</button>
-          <button className="active"><Pizza size={19} /> Produtos</button>
+          <button className={section === "products" ? "active" : ""} onClick={() => setSection("products")}><Pizza size={19} /> Produtos</button>
+          <button className={section === "pizza" ? "active" : ""} onClick={() => setSection("pizza")}><ChefHat size={19} /> Montagem</button>
           <button onClick={addCategory}><Tags size={19} /> Categorias</button>
         </nav>
-        <div className="wave-card"><small>DESENVOLVIMENTO</small><strong>Onda 2 de 8</strong><span>Catálogo e produtos</span><div><i /></div></div>
+        <div className="wave-card"><small>DESENVOLVIMENTO</small><strong>Onda 3 de 8</strong><span>Pizzas e complementos</span><div><i style={{ width: "37.5%" }} /></div></div>
       </aside>
 
       <main>
-        <header className="topbar"><div><span>Painel administrativo</span><strong>Catálogo</strong></div><div className="topbar-actions"><span className="data-status" title={isSupabaseConfigured ? "Supabase conectado" : "Os dados ficam salvos neste navegador"}>{isSupabaseConfigured ? <Cloud size={15} /> : <Database size={15} />}{isSupabaseConfigured ? "Nuvem conectada" : "Salvo neste dispositivo"}</span><button className="store-status"><i /> Loja aberta</button></div></header>
-        <section className="content">
+        <header className="topbar"><div><span>Painel administrativo</span><strong>{section === "pizza" ? "Montagem de pizzas" : "Catálogo"}</strong></div><div className="topbar-actions"><span className="data-status" title={isSupabaseConfigured ? "Supabase conectado" : "Os dados ficam salvos neste navegador"}>{isSupabaseConfigured ? <Cloud size={15} /> : <Database size={15} />}{isSupabaseConfigured ? "Nuvem conectada" : "Salvo neste dispositivo"}</span><button className="store-status"><i /> Loja aberta</button></div></header>
+        {section === "pizza" ? <PizzaSettings /> : <section className="content">
           <div className="title-row"><div><p className="eyebrow">GESTÃO DO CARDÁPIO</p><h1>Produtos</h1><p>Cadastre os itens que aparecerão no cardápio da Braseira Pizza.</p></div><button className="primary" onClick={() => setShowForm(true)}><PackagePlus size={18} /> Novo produto</button></div>
 
           <div className="stats">
@@ -60,7 +63,7 @@ export default function App() {
               <div className="product-body"><small>{categories.find((category) => category.id === product.categoryId)?.name}</small><h2>{product.name}</h2><p>{product.description}</p><footer><strong>{money.format(product.price)}</strong><button onClick={() => toggleProduct(product.id)} title={product.active ? "Ocultar do cardápio" : "Exibir no cardápio"}>{product.active ? <Eye size={18} /> : <EyeOff size={18} />}</button></footer></div>
             </article>)}
           </div>
-        </section>
+        </section>}
       </main>
 
       {showForm && <div className="modal-backdrop" onMouseDown={() => setShowForm(false)}><form className="modal" onMouseDown={(e) => e.stopPropagation()} onSubmit={(e) => { e.preventDefault(); const data = new FormData(e.currentTarget); setProducts((current) => [...current, { id: crypto.randomUUID(), name: String(data.get("name")), description: String(data.get("description")), categoryId: String(data.get("category")), price: Number(data.get("price")), imageUrl: String(data.get("imageUrl") ?? ""), active: true }]); setShowForm(false); }}><p className="eyebrow">NOVO ITEM</p><h2>Cadastrar produto</h2><label>Nome<input name="name" required placeholder="Ex.: Pizza Marguerita" /></label><label>Descrição<textarea name="description" required placeholder="Ingredientes e apresentação" /></label><label>Endereço da imagem <span className="optional">(opcional nesta fase)</span><input name="imageUrl" type="url" placeholder="https://..." /></label><div className="form-row"><label>Categoria<select name="category">{categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select></label><label>Preço<input name="price" required min="0" step="0.01" type="number" placeholder="0,00" /></label></div><div className="modal-actions"><button type="button" onClick={() => setShowForm(false)}>Cancelar</button><button className="primary" type="submit">Salvar produto</button></div></form></div>}
