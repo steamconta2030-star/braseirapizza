@@ -5,6 +5,7 @@ import PublicMenu from "./components/PublicMenu";
 import OrdersBoard from "./components/OrdersBoard";
 import DeliverySettings from "./components/DeliverySettings";
 import Operations from "./components/Operations";
+import AdminAuth from "./components/AdminAuth";
 import { initialCategories, initialProducts } from "./data/catalog";
 import { usePersistentState } from "./hooks/usePersistentState";
 import { isSupabaseConfigured } from "./lib/supabase";
@@ -35,10 +36,10 @@ export default function App() {
     setCategories((current) => [...current, { id: crypto.randomUUID(), name, active: true }]);
   }
 
-  if (section === "public") return <PublicMenu onBack={() => setSection("pizza")} />;
+  if (section === "public") return <PublicMenu onBack={() => setSection("dashboard")} />;
   const sectionTitle = section === "dashboard" ? "Visão geral" : section === "kitchen" ? "Cozinha" : section === "cash" ? "Caixa e relatórios" : section === "pizza" ? "Montagem de pizzas" : section === "orders" ? "Central de pedidos" : section === "delivery" ? "Entrega e retirada" : "Catálogo";
 
-  return (
+  return <AdminAuth onBack={() => setSection("public")}>
     <div className="app-shell">
       <aside className="sidebar">
         <div className="brand"><span className="brand-mark"><Flame size={24} /></span><div><strong>Braseira</strong><small>Pizza • Administração</small></div></div>
@@ -80,5 +81,5 @@ export default function App() {
 
       {showForm && <div className="modal-backdrop" onMouseDown={() => setShowForm(false)}><form className="modal" onMouseDown={(e) => e.stopPropagation()} onSubmit={(e) => { e.preventDefault(); const data = new FormData(e.currentTarget); setProducts((current) => [...current, { id: crypto.randomUUID(), name: String(data.get("name")), description: String(data.get("description")), categoryId: String(data.get("category")), price: Number(data.get("price")), imageUrl: String(data.get("imageUrl") ?? ""), active: true }]); setShowForm(false); }}><p className="eyebrow">NOVO ITEM</p><h2>Cadastrar produto</h2><label>Nome<input name="name" required placeholder="Ex.: Pizza Marguerita" /></label><label>Descrição<textarea name="description" required placeholder="Ingredientes e apresentação" /></label><label>Endereço da imagem <span className="optional">(opcional nesta fase)</span><input name="imageUrl" type="url" placeholder="https://..." /></label><div className="form-row"><label>Categoria<select name="category">{categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select></label><label>Preço<input name="price" required min="0" step="0.01" type="number" placeholder="0,00" /></label></div><div className="modal-actions"><button type="button" onClick={() => setShowForm(false)}>Cancelar</button><button className="primary" type="submit">Salvar produto</button></div></form></div>}
     </div>
-  );
+  </AdminAuth>;
 }
