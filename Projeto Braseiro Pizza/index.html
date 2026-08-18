@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Braseiro Pizzas — Cardápio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800&family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --char: #241512;
+    --char-2: #331d18;
+    --crust: #E8A93B;
+    --crust-2: #F4C666;
+    --brick: #A8391F;
+    --herb: #7C8C5A;
+    --cream: #F5EDE1;
+    --cream-dim: #d9c9b3;
+    --radius: 18px;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    background: var(--char);
+    color: var(--cream);
+    font-family:'DM Sans', sans-serif;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  .display{
+    font-family:'Big Shoulders Display', sans-serif;
+    text-transform:uppercase;
+    letter-spacing:0.01em;
+  }
+  img{max-width:100%; display:block;}
+  a{color:inherit;}
+
+  /* subtle wood-fire texture backdrop */
+  .grain{
+    position:fixed; inset:0; pointer-events:none; opacity:0.05; z-index:0;
+    background-image: radial-gradient(circle at 20% 30%, #fff 0.5px, transparent 0.5px),
+                       radial-gradient(circle at 70% 60%, #fff 0.5px, transparent 0.5px);
+    background-size: 5px 5px, 7px 7px;
+  }
+
+  header{
+    position:sticky; top:0; z-index:10;
+    background: rgba(36,21,18,0.92);
+    backdrop-filter: blur(6px);
+    border-bottom: 1px solid rgba(232,169,59,0.15);
+    padding: 14px 20px;
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .brand{
+    display:flex; align-items:center; gap:10px;
+  }
+  .brand-mark{
+    width:34px; height:34px; border-radius:50%;
+    background: conic-gradient(var(--crust), var(--brick), var(--crust));
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Big Shoulders Display', sans-serif;
+    font-weight:800; color:var(--char); font-size:16px;
+  }
+  .brand-name{
+    font-size: 19px; font-weight:800; letter-spacing:0.02em;
+  }
+  .header-cta{
+    background: var(--herb);
+    color: var(--cream);
+    border-radius: 999px;
+    padding: 9px 16px;
+    font-size: 13px;
+    font-weight:700;
+    text-decoration:none;
+    white-space:nowrap;
+    display:flex; align-items:center; gap:6px;
+  }
+
+  /* HERO */
+  .hero{
+    position:relative; z-index:1;
+    padding: 56px 20px 40px;
+    text-align:center;
+    overflow:hidden;
+  }
+  .hero::before{
+    content:"";
+    position:absolute; top:-120px; left:50%; transform:translateX(-50%);
+    width:420px; height:420px; border-radius:50%;
+    background: radial-gradient(circle, rgba(232,169,59,0.16), transparent 70%);
+    z-index:-1;
+  }
+  .eyebrow{
+    font-size:13px; letter-spacing:0.18em; text-transform:uppercase;
+    color: var(--crust-2); font-weight:700; margin-bottom:14px;
+  }
+  .hero h1{
+    font-size: clamp(42px, 12vw, 64px);
+    line-height:0.92;
+    font-weight:800;
+  }
+  .hero h1 .accent{ color: var(--crust); }
+  .hero p{
+    max-width:420px; margin: 18px auto 28px;
+    color: var(--cream-dim);
+    font-size:16px;
+  }
+  .hero-actions{
+    display:flex; flex-direction:column; gap:12px; align-items:center;
+  }
+  .btn-primary{
+    background: var(--crust);
+    color: var(--char);
+    font-weight:800;
+    font-size:16px;
+    text-decoration:none;
+    padding: 16px 34px;
+    border-radius: 999px;
+    display:inline-flex; align-items:center; gap:10px;
+    box-shadow: 0 10px 30px -8px rgba(232,169,59,0.5);
+  }
+  .hero-meta{
+    display:flex; gap:18px; justify-content:center; margin-top:22px;
+    font-size:13px; color:var(--cream-dim); flex-wrap:wrap;
+  }
+  .hero-meta span{display:flex; align-items:center; gap:6px;}
+  .dot{width:6px; height:6px; border-radius:50%; background:var(--herb); display:inline-block;}
+
+  /* SECTION LABELS */
+  .section{ position:relative; z-index:1; padding: 10px 20px 8px; }
+  .section-head{
+    display:flex; align-items:baseline; justify-content:space-between;
+    margin: 46px 0 18px;
+  }
+  .section-head h2{
+    font-size: 30px; font-weight:800;
+  }
+  .section-head .count{
+    font-size:13px; color:var(--cream-dim);
+  }
+
+  /* MENU */
+  .menu-group + .menu-group{ margin-top:34px; }
+  .group-label{
+    font-size:12px; letter-spacing:0.14em; text-transform:uppercase;
+    color:var(--herb); font-weight:700; margin-bottom:12px;
+  }
+  .pizza-card{
+    background: var(--char-2);
+    border: 1px solid rgba(232,169,59,0.12);
+    border-radius: var(--radius);
+    padding: 16px;
+    display:flex; gap:14px; align-items:flex-start;
+    margin-bottom:12px;
+  }
+  .pizza-num{
+    font-family:'Big Shoulders Display', sans-serif;
+    font-size:26px; font-weight:800; color: rgba(232,169,59,0.35);
+    line-height:1; min-width:30px;
+  }
+  .pizza-info{ flex:1; }
+  .pizza-info h3{
+    font-size:18px; font-weight:700; margin-bottom:4px;
+  }
+  .pizza-info p{
+    font-size:14px; color: var(--cream-dim); margin-bottom:10px;
+  }
+  .pizza-foot{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+  }
+  .price{
+    font-family:'Big Shoulders Display', sans-serif;
+    font-size:22px; font-weight:800; color: var(--crust-2);
+  }
+  .price small{ font-size:12px; font-weight:600; color:var(--cream-dim); }
+  .order-btn{
+    background: var(--herb);
+    color: var(--cream);
+    text-decoration:none;
+    font-size:13px; font-weight:700;
+    padding: 9px 14px;
+    border-radius: 999px;
+    display:flex; align-items:center; gap:6px;
+    white-space:nowrap;
+  }
+  .order-btn svg{ width:14px; height:14px; }
+
+  /* FLAME SIGNATURE DIVIDER */
+  .divider{
+    display:flex; align-items:center; gap:14px;
+    margin: 44px 0 4px; color: var(--crust);
+  }
+  .divider::before, .divider::after{
+    content:""; flex:1; height:1px; background: rgba(232,169,59,0.2);
+  }
+  .divider span{ font-size:12px; letter-spacing:0.15em; text-transform:uppercase; font-weight:700; }
+
+  /* HOW IT WORKS */
+  .steps{ display:flex; flex-direction:column; gap:14px; }
+  .step{
+    display:flex; gap:14px; align-items:flex-start;
+    background: var(--char-2);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    border: 1px solid rgba(124,140,90,0.18);
+  }
+  .step-mark{
+    width:30px; height:30px; border-radius:50%;
+    background: var(--herb); color:var(--cream);
+    display:flex; align-items:center; justify-content:center;
+    font-weight:800; font-size:14px; flex-shrink:0;
+  }
+  .step h4{ font-size:15px; margin-bottom:2px; }
+  .step p{ font-size:13px; color:var(--cream-dim); }
+
+  /* FOOTER CTA */
+  .footer-cta{
+    text-align:center; padding: 54px 20px 20px;
+    position:relative; z-index:1;
+  }
+  .footer-cta h2{
+    font-size: clamp(30px, 8vw, 40px); font-weight:800; margin-bottom:12px;
+  }
+  .footer-cta p{ color:var(--cream-dim); margin-bottom:22px; font-size:14px; }
+
+  footer{
+    text-align:center; padding: 24px 20px 40px;
+    font-size:12px; color: rgba(245,237,225,0.4);
+    position:relative; z-index:1;
+  }
+  footer .hours{ margin-top:6px; }
+
+  @media (min-width: 720px){
+    .menu-grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px 16px; }
+    .pizza-card{ margin-bottom:0; }
+  }
+</style>
+</head>
+<body>
+<div class="grain"></div>
+
+<header>
+  <div class="brand">
+    <div class="brand-mark">B</div>
+    <div class="brand-name display">Braseiro</div>
+  </div>
+  <a class="header-cta" href="#cardapio">Ver cardápio</a>
+</header>
+
+<section class="hero">
+  <div class="eyebrow">Forno a lenha · feita na hora</div>
+  <h1 class="display">Pizza de<br><span class="accent">verdade</span>,<br>na sua mesa</h1>
+  <p>Massa de fermentação lenta, ingredientes selecionados e aquele toque de fumaça do forno a lenha. Peça agora pelo WhatsApp.</p>
+  <div class="hero-actions">
+    <a class="btn-primary" href="#cardapio">Ver o cardápio 🍕</a>
+  </div>
+  <div class="hero-meta">
+    <span><i class="dot"></i> Peça em 1 clique</span>
+    <span><i class="dot"></i> Entrega e retirada</span>
+    <span><i class="dot"></i> Aberto todos os dias</span>
+  </div>
+</section>
+
+<main class="section" id="cardapio">
+  <div class="section-head">
+    <h2 class="display">Cardápio</h2>
+    <span class="count">10 sabores</span>
+  </div>
+
+  <div class="menu-group">
+    <div class="group-label">Tradicionais</div>
+    <div class="menu-grid">
+
+      <div class="pizza-card">
+        <div class="pizza-num">01</div>
+        <div class="pizza-info">
+          <h3>Margherita</h3>
+          <p>Molho de tomate, mussarela, manjericão fresco e azeite.</p>
+          <div class="pizza-foot">
+            <div class="price">R$ 42<small>/ grande</small></div>
+            <a class="order-btn" href="https://wa.me/5500000000000?text=Ol%C3%A1!%20Quero%20pedir%20a%20pizza%20Margherita" target="_blank" rel="noopener">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12c0 1.85.5 3.58 1.36 5.08L2 22l5.06-1.33A9.94 9.94 0 0 0 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2zm5.1 14.24c-.24.68-1.4 1.3-1.94 1.36-.5.06-1.1.09-1.78-.11-.41-.12-.94-.3-1.62-.6-2.86-1.24-4.72-4.13-4.86-4.32-.14-.19-1.16-1.55-1.16-2.96 0-1.41.74-2.1 1-2.39.26-.29.58-.36.77-.36h.55c.18 0 .42-.03.65.5.24.55.8 1.9.87 2.04.07.14.11.3.02.49-.09.19-.14.3-.28.46-.14.16-.29.36-.42.48-.14.14-.28.28-.12.55.16.28.7 1.15 1.5 1.86 1.03.92 1.9 1.21 2.18 1.35.28.14.44.12.6-.07.16-.19.68-.79.86-1.06.18-.28.36-.23.6-.14.24.09 1.55.73 1.82.86.27.14.45.2.51.32.07.12.07.68-.17 1.36z"/></svg>
+              Pedir
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="pizza-card">
+        <div class="pizza-num">02</div>
+        <div class="pizza-info">
+          <h3>Calabresa</h3>
+          <p>Molho de tomate, mussarela, calabresa fatiada e cebola roxa.</p>
+          <div class="pizza-foot">
+            <div class="price">R$ 40<small>/ grande</small></div>
+            <a class="order-btn" href="https://wa.me/5500000000000?text=Ol%C3%A1!%20Quero%20pedir%20a%20pizza%20Calabresa" target="_blank" rel="noopener">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12c0 1.85.5 3.58 1.36 5.08L2 22l5.06-1.33A9.94 9.94 0 0 0 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2zm5.1 14.24c-.24.68-1.4 1.3-1.94 1.36-.5.06-1.1.09-1.78-.11-.41-.12-.94-.3-1.62-.6-2.86-1.24-4.72-4.13-4.86-4.32-.14-.19-1.16-1.55-1.16-2.96 0-1.41.74-2.1 1-2.39.26-.29.58-.36.77-.36h.55c.18 0 .42-.03.65.5.24.55.8 1.9.87 2.04.07.14.11.3.02.49-.09.19-.14.3-.28.46-.14.16-.29.36-.42.48-.14.14-.28.28-.12.55.16.28.7 1.15 1.5 1.86 1.03.92 1.9 1.21 2.18 1.35.28.14.44.12.6-.07.16-.19.68-.79.86-1.06.18-.28.36-.23.6-.14.24.09 1.55.73 1.82.86.27.14.45.2.51.32.07.12.07.68-.17 1.36z"/></svg>
+              Pedir
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="pizza-card">
+        <div class="pizza-num">03</div>
+        <div class="pizza-info">
+          <h3>Portuguesa</h3>
+          <p>Presunto, ovos, cebola, azeitona, ervilha e mussarela.</p>
+          <div class="pizza-foot">
+            <div class="price">R$ 44<small>/ grande</small></div>
+            <a class="order-btn" href="https://wa.me/5500000000000?text=Ol%C3%A1!%20Quero%20pedir%20a%20pizza%20Portuguesa" target="_blank" rel="noopener">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12c0 1.85.5 3.58 1.36 5.08L2 22l5.06-1.33A9.94 9.94 0 0 0 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2zm5.1 14.24c-.24.68-1.4 1.3-1.94 1.36-.5.06-1.1.09-1.78-.11-.41-.12-.94-.3-1.62-.6-2.86-1.24-4.72-4.13-4.86-4.32-.14-.19-1.16-1.55-1.16-2.96 0-1.41.74-2.1 1-2.39.26-.29.58-.36.77-.36h.55c.18 0 .42-.03.65.5.24.55.8 1.9.87 2.04.07.14.11.3.02.49-.09.19-.14.3-.28.46-.14.16-.29.36-.42.48-.14.14-.28.28-.12.55.16.28.7 1.15 1.5 1.86 1.03.92 1.9 1.21 2.18 1.35.28.14.44.12.6-.07.16-.19.68-.79.86-1.06.18-.28.36-.23.6-.14.24.09 1.55.73 1.82.86.27.14.45.2.51.32.07.12.07.68-.17 1.36z"/></svg>
+              Pedir
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="pizza-card">
+        <div class="pizza-num">04</div>
+        <div class="pizza-info">
+          <h3>Quatro Queijos</h3>
+          <p>Mussarela, provolone, parmesão e gorgonzola.</p>
+          <div class="pizza-foot">
+            <div class="price">R$ 46<small>/ grande</small></div>
+            <a class="order-btn" href="https://wa.me/5500000000000?text=Ol%C3%A1!%20Quero%20pedir%20a%20pizza%20Quatro%20Queijos" target="_blank" rel="noopener">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12c0 1.85.5 3.58 1.36 5.08L2 22l5.06-1.33A9.94 9.94 0 0 0 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2zm5.1 14.24c-.24.68-1.4 1.3-1.94 1.36-.5.06-1.1.09-1.78-.11-.41-.12-.94-.3-1.62-.6-2.86-1.24-4.72-4.13-4.86-4.32-.14-.19-1.16-1.55-1.16-2.96 0-1.41.74-2.1 1-2.39.26-.29.58-.36.77-.36h.55c.18 0 .42-.03.65.5.24.55.8 1.9.87 2.04.07.14.11.3.02.49-.09.19-.14.3-.28.46-.14.16-.29.36-.42.48-.14.14-.28.28-.12.55.16.28.7 1.15 1.5 1.86 1.03.92 1.9 1.21 2.18 1.35.28.14.44.12.6-.07.16-.19.68-.79.86-1.06.18-.28.36-.23.6-.14.24.09 1.55.73 1.82.86.27.14.45.2.51.32.07.12.07.68-.17 1.36z"/></svg>
+              Pedir
+            </a>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="menu-group">
+    <div class="group-label">Especiais da casa</div>
+    <div class="menu-grid">
+
+      <div class="pizza-card">
+        <div class="pizza-num">05</div>
+        <div class="pizza-info">
+          <h3>Braseiro</h3>
+          <p>Costela desfiada, cebola caramelizada, provolone e barbecue defumado.</p>
+          <div class="pizza-foot">
+            <div class="price">R$ 52<small>/ grande</small></div>
+            <a class="order-btn" href="https://wa.me/5500000000000?text=Ol%C3%A1!%20Quero%20pedir%20a%20pizza%20Braseiro" target="_blank" rel="noopener">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12c0 1.85.5 3.58 1.36 5.08L2 22l5.06-1.33A9.94 9.94 0 0 0 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2zm5.1 14.24c-.24.68-1.4 1.3-1.94 1.36-.5.06-1.1.09-1.78-.11-.41-.12-.94-.3-1.62-.6-2.86-1.24-4.72-4.13-4.86-4.32-.14-.19-1.16-1.55-1.16-2.96 0-1.41.74-2.1 1-2.39.26-.29.58-.36.77-.36h.55c.18 0 .42-.03.65.5.24.55.8 1.9.87 2.04.07.14.11.3.02.49-.09.19-.14.3-.28.46-.14.16-.29.36-.42.48-.14.14-.28.28-.12.55.16.28.7 1.15 1.5 1.86 1.03.92 1.9 1.21 2.18 1.35.28.14.44.12.6-.07.16-.19.68-.79.86-1.06.18-.28.36-.23.6-.14.24.09 1.55.73 1.82.86.27.14.45.2.51.32.07.12.07.68-.17 1.36z"/></svg>
+              Pedir
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="pizza-card">
+        <div class="pizza-num">06</div>
+        <div class="pizza-info">
+          <h3>Rúcula com Tomate Seco</h3>
+          <p>Mussarela de búfala, rúcula fresca, tomate seco e lascas de parmesão.</p>
+          <div class="pizza-foot">
+            <div class="price">R$ 48<small>/ grande</small></div>
+            <a class="order-btn" href="https://wa.me/5500000000000?text=Ol%C3%A1!%20Quero%20pedir%20a%20pizza%20R%C3%BAcula%20com%20Tomate%20Seco" target="_blank" rel="noopener">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12c0 1.85.5 3.58 1.36 5.08L2 22l5.06-1.33A9.94 9.94 0 0 0 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2zm5.1 14.24c-.24.68-1.4 1.3-1.94 1.36-.5.06-1.1.09-1.78-.11-.41-.12-.94-.3-1.62-.6-2.86-1.24-4.72-4.13-4.86-4.32-.14-.19-1.16-1.55-1.16-2.96 0-1.41.74-2.1 1-2.39.26-.29.58-.36.77-.36h.55c.18 0 .42-.03.65.5.24.55.8 1.9.87 2.04.07.14.11.3.02.49-.09.19-.14.3-.28.46-.14.16-.29.36-.42.48-.14.14-.28.28-.12.55.16.28.7 1.15 1.5 1.86 1.03.92 1.9 1.21 2.18 1.35.28.14.44.12.6-.07.16-.19.68-.79.86-1.06.18-.28.36-.23.6-.14.24.09 1.55.73 1.82.86.27.14.45.2.51.32.07.12.07.68-.17 1.36z"/></svg>
+              Pedir
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="pizza-card">
+        <div class="pizza-num">07</div>
+        <div class="pizza-info">
+          <h3>Frango com Catupiry</h3>
+          <p>Frango desfiado temperado, catupiry cremoso e milho.</p>
+          <div class="pizza-foot">
+            <div class="price">R$ 44<small>/ grande</small></div>
+            <a class="order-btn" href="https://wa.me/5500000000000?text=Ol%C3%A1!%20Quero%20pedir%20a%20pizza%20Frango%20com%20Catupiry" target="_blank" rel="noopener">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12c0 1.85.5 3.58 1.36 5.08L2 22l5.06-1.33A9.94 9.94 0 0 0 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2zm5.1 14.24c-.24.68-1.4 1.3-1.94 1.36-.5.06-1.1.09-1.78-.11-.41-.12-.94-.3-1.62-.6-2.86-1.24-4.72-4.13-4.86-4.32-.14-.19-1.16-1.55-1.16-2.96 0-1.41.74-2.1 1-2.39.26-.29.58-.36.77-.36h.55c.18 0 .42-.03.65.5.24.55.8 1.9.87 2.04.07.14.11.3.02.49-.09.19-.14.3-.28.46-.14.16-.29.36-.42.48-.14.14-.28.28-.12.55.16.28.7 1.15 1.5 1.86 1.03.92 1.9 1.21 2.18 1.35.28.14.44.12.6-.07.16-.19.68-.79.86-1.06.18-.28.36-.23.6-.14.24.09 1.55.73 1.82.86.27.14.45.2.51.32.07.12.07.68-.17 1.36z"/></svg>
+              Pedir
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="pizza-card">
+        <div class="pizza-num">08</div>
+        <div class="pizza-info">
+          <h3>Pepperoni Duplo</h3>
+          <p>Molho de tomate, mussarela e generosa camada de pepperoni.</p>
+          <div class="pizza-foot">
+            <div class="price">R$ 46<small>/ grande</small></div>
+            <a class="order-btn" href="https://wa.me/5500000000000?text=Ol%C3%A1!%20Quero%20pedir%20a%20pizza%20Pepperoni%20Duplo" target="_blank" rel="noopener">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12c0 1.85.5 3.58 1.36 5.08L2 22l5.06-1.33A9.94 9.94 0 0 0 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2zm5.1 14.24c-.24.68-1.4 1.3-1.94 1.36-.5.06-1.1.09-1.78-.11-.41-.12-.94-.3-1.62-.6-2.86-1.24-4.72-4.13-4.86-4.32-.14-.19-1.16-1.55-1.16-2.96 0-1.41.74-2.1 1-2.39.26-.29.58-.36.77-.36h.55c.18 0 .42-.03.65.5.24.55.8 1.9.87 2.04.07.14.11.3.02.49-.09.19-.14.3-.28.46-.14.16-.29.36-.42.48-.14.14-.28.28-.12.55.16.28.7 1.15 1.5 1.86 1.03.92 1.9 1.21 2.18 1.35.28.14.44.12.6-.07.16-.19.68-.79.86-1.06.18-.28.36-.23.6-.14.24.09 1.55.73 1.82.86.27.14.45.2.51.32.07.12.07.68-.17 1.36z"/></svg>
+              Pedir
+            </a>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="menu-group">
+    <div class="group-label">Doces</div>
+    <div class="menu-grid">
+
+      <div class="pizza-card">
+        <div class="pizza-num">09</div>
+        <div class="pizza-info">
+          <h3>Chocolate com Morango</h3>
+          <p>Chocolate ao leite derretido e morangos frescos fatiados.</p>
+          <div class="pizza-foot">
+            <div class="price">R$ 38<small>/ grande</small></div>
+            <a class="order-btn" href="https://wa.me/5500000000000?text=Ol%C3%A1!%20Quero%20pedir%20a%20pizza%20Chocolate%20com%20Morango" target="_blank" rel="noopener">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12c0 1.85.5 3.58 1.36 5.08L2 22l5.06-1.33A9.94 9.94 0 0 0 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2zm5.1 14.24c-.24.68-1.4 1.3-1.94 1.36-.5.06-1.1.09-1.78-.11-.41-.12-.94-.3-1.62-.6-2.86-1.24-4.72-4.13-4.86-4.32-.14-.19-1.16-1.55-1.16-2.96 0-1.41.74-2.1 1-2.39.26-.29.58-.36.77-.36h.55c.18 0 .42-.03.65.5.24.55.8 1.9.87 2.04.07.14.11.3.02.49-.09.19-.14.3-.28.46-.14.16-.29.36-.42.48-.14.14-.28.28-.12.55.16.28.7 1.15 1.5 1.86 1.03.92 1.9 1.21 2.18 1.35.28.14.44.12.6-.07.16-.19.68-.79.86-1.06.18-.28.36-.23.6-.14.24.09 1.55.73 1.82.86.27.14.45.2.51.32.07.12.07.68-.17 1.36z"/></svg>
+              Pedir
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="pizza-card">
+        <div class="pizza-num">10</div>
+        <div class="pizza-info">
+          <h3>Banana com Canela</h3>
+          <p>Banana caramelizada, canela e leite condensado.</p>
+          <div class="pizza-foot">
+            <div class="price">R$ 36<small>/ grande</small></div>
+            <a class="order-btn" href="https://wa.me/5500000000000?text=Ol%C3%A1!%20Quero%20pedir%20a%20pizza%20Banana%20com%20Canela" target="_blank" rel="noopener">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12c0 1.85.5 3.58 1.36 5.08L2 22l5.06-1.33A9.94 9.94 0 0 0 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2zm5.1 14.24c-.24.68-1.4 1.3-1.94 1.36-.5.06-1.1.09-1.78-.11-.41-.12-.94-.3-1.62-.6-2.86-1.24-4.72-4.13-4.86-4.32-.14-.19-1.16-1.55-1.16-2.96 0-1.41.74-2.1 1-2.39.26-.29.58-.36.77-.36h.55c.18 0 .42-.03.65.5.24.55.8 1.9.87 2.04.07.14.11.3.02.49-.09.19-.14.3-.28.46-.14.16-.29.36-.42.48-.14.14-.28.28-.12.55.16.28.7 1.15 1.5 1.86 1.03.92 1.9 1.21 2.18 1.35.28.14.44.12.6-.07.16-.19.68-.79.86-1.06.18-.28.36-.23.6-.14.24.09 1.55.73 1.82.86.27.14.45.2.51.32.07.12.07.68-.17 1.36z"/></svg>
+              Pedir
+            </a>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="divider"><span>Como funciona</span></div>
+  <div class="steps">
+    <div class="step">
+      <div class="step-mark">1</div>
+      <div><h4>Escolha sua pizza</h4><p>Role o cardápio e encontre o sabor que quer hoje.</p></div>
+    </div>
+    <div class="step">
+      <div class="step-mark">2</div>
+      <div><h4>Toque em "Pedir"</h4><p>Você é levado direto pro WhatsApp com a mensagem pronta.</p></div>
+    </div>
+    <div class="step">
+      <div class="step-mark">3</div>
+      <div><h4>Confirme e aguarde</h4><p>A gente confirma o pedido e o endereço, e já vai pro forno.</p></div>
+    </div>
+  </div>
+
+</main>
+
+<section class="footer-cta">
+  <h2 class="display">Bateu a fome?</h2>
+  <p>Chama a gente no WhatsApp e peça sua pizza agora.</p>
+  <a class="btn-primary" href="https://wa.me/5500000000000?text=Ol%C3%A1!%20Vim%20pelo%20card%C3%A1pio%20e%20quero%20fazer%20um%20pedido" target="_blank" rel="noopener">Chamar no WhatsApp 🍕</a>
+</section>
+
+<footer>
+  <div>Braseiro Pizzas · Forno a lenha</div>
+  <div class="hours">Terça a domingo · 18h às 23h</div>
+</footer>
+
+</body>
+</html>
