@@ -14,6 +14,8 @@ type MenuData = {
   extras: PizzaOption[];
   zones: DeliveryZone[];
   storeOpen: boolean;
+  minimumOrder: number;
+  whatsapp: string;
   online: boolean;
 };
 
@@ -26,6 +28,8 @@ const fallback: MenuData = {
   extras: initialExtras,
   zones: initialZones,
   storeOpen: true,
+  minimumOrder: 0,
+  whatsapp: "",
   online: false,
 };
 
@@ -38,7 +42,7 @@ export function useOnlineMenu() {
 
     async function load() {
       const [storeResult, categoriesResult, productsResult, sizesResult, flavorsResult, pricesResult, optionsResult, zonesResult] = await Promise.all([
-        supabase!.from("stores").select("accepting_orders").eq("slug", "braseirapizza").single(),
+        supabase!.from("stores").select("accepting_orders,minimum_order,whatsapp").eq("slug", "braseirapizza").single(),
         supabase!.from("categories").select("id,name,active").order("position"),
         supabase!.from("products").select("id,category_id,name,description,price,image_path,active").order("position"),
         supabase!.from("pizza_sizes").select("id,name,slices,max_flavors,base_price,active").order("position"),
@@ -77,7 +81,7 @@ export function useOnlineMenu() {
       const extras: PizzaOption[] = (optionsResult.data ?? []).filter((row) => row.type === "extra").map((row) => ({ id: row.id, name: row.name, price: Number(row.price), active: row.active }));
       const zones: DeliveryZone[] = (zonesResult.data ?? []).map((row) => ({ id: row.id, neighborhood: row.neighborhood, fee: Number(row.fee), etaMinutes: row.eta_minutes, active: row.active }));
 
-      if (active) setData({ categories, products, sizes, flavors, crusts, extras, zones, storeOpen: storeResult.data?.accepting_orders ?? true, online: true });
+      if (active) setData({ categories, products, sizes, flavors, crusts, extras, zones, storeOpen: storeResult.data?.accepting_orders ?? true, minimumOrder: Number(storeResult.data?.minimum_order ?? 0), whatsapp: storeResult.data?.whatsapp ?? "", online: true });
     }
 
     load().catch((error) => console.error("Não foi possível carregar o cardápio online.", error));
