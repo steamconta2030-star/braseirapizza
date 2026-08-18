@@ -13,6 +13,7 @@ type MenuData = {
   crusts: PizzaOption[];
   extras: PizzaOption[];
   zones: DeliveryZone[];
+  storeOpen: boolean;
   online: boolean;
 };
 
@@ -24,6 +25,7 @@ const fallback: MenuData = {
   crusts: initialCrusts,
   extras: initialExtras,
   zones: initialZones,
+  storeOpen: true,
   online: false,
 };
 
@@ -35,7 +37,8 @@ export function useOnlineMenu() {
     let active = true;
 
     async function load() {
-      const [categoriesResult, productsResult, sizesResult, flavorsResult, pricesResult, optionsResult, zonesResult] = await Promise.all([
+      const [storeResult, categoriesResult, productsResult, sizesResult, flavorsResult, pricesResult, optionsResult, zonesResult] = await Promise.all([
+        supabase!.from("stores").select("accepting_orders").eq("slug", "braseirapizza").single(),
         supabase!.from("categories").select("id,name,active").order("position"),
         supabase!.from("products").select("id,category_id,name,description,price,image_path,active").order("position"),
         supabase!.from("pizza_sizes").select("id,name,slices,max_flavors,base_price,active").order("position"),
@@ -45,7 +48,7 @@ export function useOnlineMenu() {
         supabase!.from("delivery_zones").select("id,neighborhood,fee,eta_minutes,active").order("neighborhood"),
       ]);
 
-      const failed = [categoriesResult, productsResult, sizesResult, flavorsResult, pricesResult, optionsResult, zonesResult]
+      const failed = [storeResult, categoriesResult, productsResult, sizesResult, flavorsResult, pricesResult, optionsResult, zonesResult]
         .find((result) => result.error);
       if (failed?.error) throw failed.error;
 
@@ -74,7 +77,7 @@ export function useOnlineMenu() {
       const extras: PizzaOption[] = (optionsResult.data ?? []).filter((row) => row.type === "extra").map((row) => ({ id: row.id, name: row.name, price: Number(row.price), active: row.active }));
       const zones: DeliveryZone[] = (zonesResult.data ?? []).map((row) => ({ id: row.id, neighborhood: row.neighborhood, fee: Number(row.fee), etaMinutes: row.eta_minutes, active: row.active }));
 
-      if (active) setData({ categories, products, sizes, flavors, crusts, extras, zones, online: true });
+      if (active) setData({ categories, products, sizes, flavors, crusts, extras, zones, storeOpen: storeResult.data?.accepting_orders ?? true, online: true });
     }
 
     load().catch((error) => console.error("Não foi possível carregar o cardápio online.", error));
