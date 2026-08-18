@@ -1,21 +1,23 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Check, CircleDollarSign, Plus, Settings2 } from "lucide-react";
-import { initialCrusts, initialExtras, initialFlavors, initialSizes } from "../data/pizza";
-import { usePersistentState } from "../hooks/usePersistentState";
+import { initialCrusts, initialFlavors } from "../data/pizza";
+import { useOnlineMenu } from "../hooks/useOnlineMenu";
+import { supabase } from "../lib/supabase";
 import type { PizzaFlavor, PizzaOption, PizzaSize } from "../types";
 
 const money = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 
 export default function PizzaSettings() {
-  const [sizes] = usePersistentState<PizzaSize[]>("braseira:pizza-sizes", initialSizes);
-  const [flavors, setFlavors] = usePersistentState<PizzaFlavor[]>("braseira:pizza-flavors", initialFlavors);
-  const [crusts, setCrusts] = usePersistentState<PizzaOption[]>("braseira:pizza-crusts", initialCrusts);
-  const [extras] = usePersistentState<PizzaOption[]>("braseira:pizza-extras", initialExtras);
+  const onlineMenu = useOnlineMenu();
+  const sizes = onlineMenu.sizes;
+  const extras = onlineMenu.extras;
+  const [flavors, setFlavors] = useState<PizzaFlavor[]>(initialFlavors);
+  const [crusts, setCrusts] = useState<PizzaOption[]>(initialCrusts);
   const [selectedSize, setSelectedSize] = useState("grande");
   const [selectedFlavors, setSelectedFlavors] = useState<string[]>(["calabresa", "frango-catupiry"]);
   const [selectedCrust, setSelectedCrust] = useState("catupiry");
   const [selectedExtras, setSelectedExtras] = useState<string[]>([]);
-  const size = sizes.find((item) => item.id === selectedSize)!;
+  const size = sizes.find((item) => item.id === selectedSize) ?? sizes[0];
   const chosenFlavors = flavors.filter((flavor) => selectedFlavors.includes(flavor.id));
   const flavorPrice = Math.max(size.basePrice, ...chosenFlavors.map((flavor) => flavor.priceBySize[selectedSize] ?? size.basePrice));
   const crustPrice = crusts.find((crust) => crust.id === selectedCrust)?.price ?? 0;
@@ -23,18 +25,32 @@ export default function PizzaSettings() {
   const total = flavorPrice + crustPrice + extrasPrice;
   const summary = useMemo(() => chosenFlavors.map((flavor) => flavor.name).join(" + "), [chosenFlavors]);
 
+  useEffect(() => { setFlavors(onlineMenu.flavors); setCrusts(onlineMenu.crusts); }, [onlineMenu.flavors, onlineMenu.crusts]);
+  useEffect(() => {
+    if (!sizes.some((item) => item.id === selectedSize)) setSelectedSize(sizes.find((item) => item.name === "Grande")?.id ?? sizes[0]?.id ?? "");
+    if (!crusts.some((item) => item.id === selectedCrust)) setSelectedCrust(crusts.find((item) => item.name.includes("Catupiry"))?.id ?? crusts[0]?.id ?? "");
+    setSelectedFlavors((current) => current.filter((id) => flavors.some((flavor) => flavor.id === id)).slice(0, size.maxFlavors));
+  }, [crusts, flavors, selectedCrust, selectedSize, size.maxFlavors, sizes]);
+
   function chooseFlavor(id: string) {
     setSelectedFlavors((current) => current.includes(id) ? current.filter((item) => item !== id) : current.length >= size.maxFlavors ? [...current.slice(1), id] : [...current, id]);
   }
-  function addFlavor() {
+  async function addFlavor() {
     const name = window.prompt("Nome do novo sabor:")?.trim(); if (!name) return;
     const ingredients = window.prompt("Ingredientes principais:")?.trim() ?? "";
-    setFlavors((current) => [...current, { id: crypto.randomUUID(), name, ingredients, priceBySize: Object.fromEntries(sizes.map((item) => [item.id, item.basePrice])), active: true }]);
+    if (!supabase) return;
+    const { data, error } = await supabase.from("pizza_flavors").insert({ store_id: "10000000-0000-4000-8000-000000000001", name, ingredients, position: flavors.length, active: true }).select("id,name,ingredients,active").single();
+    if (error || !data) return;
+    const priceBySize = Object.fromEntries(sizes.map((item) => [item.id, item.basePrice]));
+    await supabase.from("pizza_flavor_prices").insert(sizes.map((item) => ({ flavor_id: data.id, size_id: item.id, price: item.basePrice })));
+    setFlavors((current) => [...current, { id: data.id, name: data.name, ingredients: data.ingredients, priceBySize, active: data.active }]);
   }
-  function addCrust() {
+  async function addCrust() {
     const name = window.prompt("Nome da nova borda:")?.trim(); if (!name) return;
     const price = Number(window.prompt("Acréscimo da borda:", "8")?.replace(",", ".") ?? 0);
-    setCrusts((current) => [...current, { id: crypto.randomUUID(), name, price: Number.isFinite(price) ? price : 0, active: true }]);
+    if (!supabase) return;
+    const { data } = await supabase.from("pizza_options").insert({ store_id: "10000000-0000-4000-8000-000000000001", type: "crust", name, price: Number.isFinite(price) ? price : 0, position: crusts.length, active: true }).select("id,name,price,active").single();
+    if (data) setCrusts((current) => [...current, { id: data.id, name: data.name, price: Number(data.price), active: data.active }]);
   }
 
   return <section className="content pizza-settings">
