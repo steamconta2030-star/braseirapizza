@@ -1,12 +1,14 @@
+import { useEffect, useState } from "react";
 import { Banknote, BarChart3, ChefHat, Clock3, CreditCard, Flame, PackageCheck, QrCode, ShoppingBag } from "lucide-react";
-import { usePersistentState } from "../hooks/usePersistentState";
 import { useOnlineOrders } from "../hooks/useOnlineOrders";
+import { supabase } from "../lib/supabase";
 import type { CashSession, Order, OrderStatus } from "../types";
 const money = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 
 export default function Operations({ view }: { view: "dashboard" | "kitchen" | "cash" }) {
   const { orders, updateStatus } = useOnlineOrders();
-  const [cash, setCash] = usePersistentState<CashSession[]>("braseira:cash-sessions", []);
+  const [cash, setCash] = useState<CashSession[]>([]);
+  useEffect(() => { supabase?.from("cash_sessions").select("id,opened_at,opening_amount,closed_at,closing_amount").order("opened_at", { ascending: false }).then(({ data }) => { if (data) setCash(data.map((row) => ({ id: row.id, openedAt: row.opened_at, openingAmount: Number(row.opening_amount), closedAt: row.closed_at ?? undefined, closingAmount: row.closing_amount ? Number(row.closing_amount) : undefined }))); }); }, []);
   const today = new Date().toISOString().slice(0, 10);
   const todayOrders = orders.filter((order) => order.createdAt.slice(0, 10) === today && order.status !== "cancelled");
   const completed = todayOrders.filter((order) => order.status === "delivered");
@@ -14,8 +16,8 @@ export default function Operations({ view }: { view: "dashboard" | "kitchen" | "
   const orderedRevenue = todayOrders.reduce((sum, order) => sum + order.total, 0);
   const activeCash = cash.find((session) => !session.closedAt);
   function move(id: string, status: OrderStatus) { updateStatus(id, status); }
-  function openCash() { const value = Number(window.prompt("Valor inicial do caixa:", "150")?.replace(",", ".") ?? 0); setCash((current) => [{ id: crypto.randomUUID(), openedAt: new Date().toISOString(), openingAmount: value }, ...current]); }
-  function closeCash() { if (!activeCash) return; const value = Number(window.prompt("Valor contado no caixa:", String(activeCash.openingAmount + revenue))?.replace(",", ".") ?? 0); setCash((current) => current.map((session) => session.id === activeCash.id ? { ...session, closedAt: new Date().toISOString(), closingAmount: value } : session)); }
+  async function openCash() { const value = Number(window.prompt("Valor inicial do caixa:", "150")?.replace(",", ".") ?? 0); if (!supabase || !Number.isFinite(value)) return; const { data: auth } = await supabase.auth.getUser(); if (!auth.user) return; const { data } = await supabase.from("cash_sessions").insert({ store_id: "10000000-0000-4000-8000-000000000001", opened_by: auth.user.id, opening_amount: value }).select("id,opened_at,opening_amount").single(); if (data) setCash((current) => [{ id: data.id, openedAt: data.opened_at, openingAmount: Number(data.opening_amount) }, ...current]); }
+  async function closeCash() { if (!activeCash || !supabase) return; const value = Number(window.prompt("Valor contado no caixa:", String(activeCash.openingAmount + revenue))?.replace(",", ".") ?? 0); if (!Number.isFinite(value)) return; const { data: auth } = await supabase.auth.getUser(); const closedAt = new Date().toISOString(); const { error } = await supabase.from("cash_sessions").update({ closed_by: auth.user?.id, closed_at: closedAt, closing_amount: value }).eq("id", activeCash.id); if (!error) setCash((current) => current.map((session) => session.id === activeCash.id ? { ...session, closedAt, closingAmount: value } : session)); }
 
   if (view === "kitchen") {
     const columns: { status: OrderStatus; title: string }[] = [{ status: "confirmed", title: "Aguardando preparo" }, { status: "preparing", title: "Em preparo" }, { status: "ready", title: "Prontos" }];
