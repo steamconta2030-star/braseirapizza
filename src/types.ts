@@ -23,5 +23,7 @@ export type OrderStatus = "pending" | "confirmed" | "preparing" | "ready" | "del
 export type Order = {
   id: string; number: number; customerName: string; phone: string; deliveryType: "delivery" | "pickup";
   address: string; paymentMethod: "pix" | "cash" | "card"; changeFor?: number; notes: string;
-  items: CartItem[]; subtotal: number; deliveryFee: number; total: number; status: OrderStatus; createdAt: string;
+  items: CartItem[]; subtotal: number; deliveryFee: number; total: number; status: OrderStatus; courierId?: string; createdAt: string;
 };
+export type DeliveryZone = { id: string; neighborhood: string; fee: number; etaMinutes: number; active: boolean };
+export type Courier = { id: string; name: string; phone: string; vehicle: string; active: boolean };
