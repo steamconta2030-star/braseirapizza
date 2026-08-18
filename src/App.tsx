@@ -20,6 +20,7 @@ export default function App() {
   const [query, setQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [showForm, setShowForm] = useState(false);
+  const [storeOpen, setStoreOpen] = useState(true);
   const [section, setSection] = useState<"dashboard" | "kitchen" | "cash" | "products" | "pizza" | "orders" | "delivery" | "public">("public");
 
   const visible = useMemo(() => products.filter((product) => {
@@ -32,9 +33,11 @@ export default function App() {
     Promise.all([
       supabase.from("categories").select("id,name,active").eq("store_id", STORE_ID).order("position"),
       supabase.from("products").select("id,category_id,name,description,price,image_path,active").eq("store_id", STORE_ID).order("position"),
-    ]).then(([categoryResult, productResult]) => {
+      supabase.from("stores").select("accepting_orders").eq("id", STORE_ID).single(),
+    ]).then(([categoryResult, productResult, storeResult]) => {
       if (categoryResult.data) setCategories(categoryResult.data.map((row) => ({ id: row.id, name: row.name, active: row.active })));
       if (productResult.data) setProducts(productResult.data.map((row) => ({ id: row.id, categoryId: row.category_id, name: row.name, description: row.description, price: Number(row.price), imageUrl: row.image_path ?? "", active: row.active })));
+      if (storeResult.data) setStoreOpen(storeResult.data.accepting_orders);
     });
   }, []);
 
@@ -60,6 +63,8 @@ export default function App() {
     if (!error && saved) { setProducts((current) => [...current, { id: saved.id, categoryId: saved.category_id, name: saved.name, description: saved.description, price: Number(saved.price), imageUrl: saved.image_path ?? "", active: saved.active }]); setShowForm(false); }
   }
 
+  async function toggleStore() { if (!supabase) return; const next = !storeOpen; setStoreOpen(next); const { error } = await supabase.from("stores").update({ accepting_orders: next, updated_at: new Date().toISOString() }).eq("id", STORE_ID); if (error) setStoreOpen(!next); }
+
   if (section === "public") return <PublicMenu onBack={() => setSection("dashboard")} />;
   const sectionTitle = section === "dashboard" ? "Visão geral" : section === "kitchen" ? "Cozinha" : section === "cash" ? "Caixa e relatórios" : section === "pizza" ? "Montagem de pizzas" : section === "orders" ? "Central de pedidos" : section === "delivery" ? "Entrega e retirada" : "Catálogo";
 
@@ -78,11 +83,11 @@ export default function App() {
           <button onClick={() => setSection("public")}><Store size={19} /> Ver cardápio</button>
           <button onClick={addCategory}><Tags size={19} /> Categorias</button>
         </nav>
-        <div className="wave-card"><small>DESENVOLVIMENTO</small><strong>Onda 8 de 8</strong><span>Validação e segurança</span><div><i style={{ width: "100%" }} /></div></div>
+        <div className="wave-card"><small>NOVA FASE</small><strong>Onda 9 de 12</strong><span>Controle da loja</span><div><i style={{ width: "75%" }} /></div></div>
       </aside>
 
       <main>
-        <header className="topbar"><div><span>Painel administrativo</span><strong>{sectionTitle}</strong></div><div className="topbar-actions"><span className="data-status" title={isSupabaseConfigured ? "Supabase conectado" : "Os dados ficam salvos neste navegador"}>{isSupabaseConfigured ? <Cloud size={15} /> : <Database size={15} />}{isSupabaseConfigured ? "Nuvem conectada" : "Salvo neste dispositivo"}</span><button className="store-status"><i /> Loja aberta</button></div></header>
+        <header className="topbar"><div><span>Painel administrativo</span><strong>{sectionTitle}</strong></div><div className="topbar-actions"><span className="data-status" title={isSupabaseConfigured ? "Supabase conectado" : "Os dados ficam salvos neste navegador"}>{isSupabaseConfigured ? <Cloud size={15} /> : <Database size={15} />}{isSupabaseConfigured ? "Nuvem conectada" : "Salvo neste dispositivo"}</span><button className={`store-status ${storeOpen ? "" : "closed"}`} onClick={toggleStore}><i /> {storeOpen ? "Loja aberta" : "Loja fechada"}</button></div></header>
         {section === "dashboard" ? <Operations view="dashboard" /> : section === "kitchen" ? <Operations view="kitchen" /> : section === "cash" ? <Operations view="cash" /> : section === "pizza" ? <PizzaSettings /> : section === "orders" ? <OrdersBoard /> : section === "delivery" ? <DeliverySettings /> : <section className="content">
           <div className="title-row"><div><p className="eyebrow">GESTÃO DO CARDÁPIO</p><h1>Produtos</h1><p>Cadastre os itens que aparecerão no cardápio da Braseira Pizza.</p></div><button className="primary" onClick={() => setShowForm(true)}><PackagePlus size={18} /> Novo produto</button></div>
 
