@@ -1,13 +1,15 @@
 import { useMemo, useState } from "react";
-import { Eye, EyeOff, Flame, LayoutDashboard, PackagePlus, Pizza, Search, Tags } from "lucide-react";
+import { Cloud, Database, Eye, EyeOff, Flame, LayoutDashboard, PackagePlus, Pizza, Search, Tags } from "lucide-react";
 import { initialCategories, initialProducts } from "./data/catalog";
+import { usePersistentState } from "./hooks/usePersistentState";
+import { isSupabaseConfigured } from "./lib/supabase";
 import type { Category, Product } from "./types";
 
 const money = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 
 export default function App() {
-  const [categories, setCategories] = useState<Category[]>(initialCategories);
-  const [products, setProducts] = useState<Product[]>(initialProducts);
+  const [categories, setCategories] = usePersistentState<Category[]>("braseira:categories", initialCategories);
+  const [products, setProducts] = usePersistentState<Product[]>("braseira:products", initialProducts);
   const [query, setQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [showForm, setShowForm] = useState(false);
@@ -40,7 +42,7 @@ export default function App() {
       </aside>
 
       <main>
-        <header className="topbar"><div><span>Painel administrativo</span><strong>Catálogo</strong></div><button className="store-status"><i /> Loja aberta</button></header>
+        <header className="topbar"><div><span>Painel administrativo</span><strong>Catálogo</strong></div><div className="topbar-actions"><span className="data-status" title={isSupabaseConfigured ? "Supabase conectado" : "Os dados ficam salvos neste navegador"}>{isSupabaseConfigured ? <Cloud size={15} /> : <Database size={15} />}{isSupabaseConfigured ? "Nuvem conectada" : "Salvo neste dispositivo"}</span><button className="store-status"><i /> Loja aberta</button></div></header>
         <section className="content">
           <div className="title-row"><div><p className="eyebrow">GESTÃO DO CARDÁPIO</p><h1>Produtos</h1><p>Cadastre os itens que aparecerão no cardápio da Braseira Pizza.</p></div><button className="primary" onClick={() => setShowForm(true)}><PackagePlus size={18} /> Novo produto</button></div>
 
@@ -54,14 +56,14 @@ export default function App() {
 
           <div className="product-grid">
             {visible.map((product) => <article className="product-card" key={product.id}>
-              <div className="product-image"><Pizza size={42} /><span className={product.active ? "available" : "unavailable"}>{product.active ? "Disponível" : "Oculto"}</span></div>
+              <div className="product-image">{product.imageUrl ? <img src={product.imageUrl} alt={product.name} /> : <Pizza size={42} />}<span className={product.active ? "available" : "unavailable"}>{product.active ? "Disponível" : "Oculto"}</span></div>
               <div className="product-body"><small>{categories.find((category) => category.id === product.categoryId)?.name}</small><h2>{product.name}</h2><p>{product.description}</p><footer><strong>{money.format(product.price)}</strong><button onClick={() => toggleProduct(product.id)} title={product.active ? "Ocultar do cardápio" : "Exibir no cardápio"}>{product.active ? <Eye size={18} /> : <EyeOff size={18} />}</button></footer></div>
             </article>)}
           </div>
         </section>
       </main>
 
-      {showForm && <div className="modal-backdrop" onMouseDown={() => setShowForm(false)}><form className="modal" onMouseDown={(e) => e.stopPropagation()} onSubmit={(e) => { e.preventDefault(); const data = new FormData(e.currentTarget); setProducts((current) => [...current, { id: crypto.randomUUID(), name: String(data.get("name")), description: String(data.get("description")), categoryId: String(data.get("category")), price: Number(data.get("price")), imageUrl: "", active: true }]); setShowForm(false); }}><p className="eyebrow">NOVO ITEM</p><h2>Cadastrar produto</h2><label>Nome<input name="name" required placeholder="Ex.: Pizza Marguerita" /></label><label>Descrição<textarea name="description" required placeholder="Ingredientes e apresentação" /></label><div className="form-row"><label>Categoria<select name="category">{categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select></label><label>Preço<input name="price" required min="0" step="0.01" type="number" placeholder="0,00" /></label></div><div className="modal-actions"><button type="button" onClick={() => setShowForm(false)}>Cancelar</button><button className="primary" type="submit">Salvar produto</button></div></form></div>}
+      {showForm && <div className="modal-backdrop" onMouseDown={() => setShowForm(false)}><form className="modal" onMouseDown={(e) => e.stopPropagation()} onSubmit={(e) => { e.preventDefault(); const data = new FormData(e.currentTarget); setProducts((current) => [...current, { id: crypto.randomUUID(), name: String(data.get("name")), description: String(data.get("description")), categoryId: String(data.get("category")), price: Number(data.get("price")), imageUrl: String(data.get("imageUrl") ?? ""), active: true }]); setShowForm(false); }}><p className="eyebrow">NOVO ITEM</p><h2>Cadastrar produto</h2><label>Nome<input name="name" required placeholder="Ex.: Pizza Marguerita" /></label><label>Descrição<textarea name="description" required placeholder="Ingredientes e apresentação" /></label><label>Endereço da imagem <span className="optional">(opcional nesta fase)</span><input name="imageUrl" type="url" placeholder="https://..." /></label><div className="form-row"><label>Categoria<select name="category">{categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select></label><label>Preço<input name="price" required min="0" step="0.01" type="number" placeholder="0,00" /></label></div><div className="modal-actions"><button type="button" onClick={() => setShowForm(false)}>Cancelar</button><button className="primary" type="submit">Salvar produto</button></div></form></div>}
     </div>
   );
 }
