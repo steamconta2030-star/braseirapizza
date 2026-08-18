@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
-import { ChefHat, Cloud, Database, Eye, EyeOff, Flame, LayoutDashboard, PackagePlus, Pizza, Search, Store, Tags } from "lucide-react";
+import { ChefHat, ClipboardList, Cloud, Database, Eye, EyeOff, Flame, LayoutDashboard, PackagePlus, Pizza, Search, Store, Tags } from "lucide-react";
 import PizzaSettings from "./components/PizzaSettings";
 import PublicMenu from "./components/PublicMenu";
+import OrdersBoard from "./components/OrdersBoard";
 import { initialCategories, initialProducts } from "./data/catalog";
 import { usePersistentState } from "./hooks/usePersistentState";
 import { isSupabaseConfigured } from "./lib/supabase";
@@ -15,7 +16,7 @@ export default function App() {
   const [query, setQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [showForm, setShowForm] = useState(false);
-  const [section, setSection] = useState<"products" | "pizza" | "public">("public");
+  const [section, setSection] = useState<"products" | "pizza" | "orders" | "public">("public");
 
   const visible = useMemo(() => products.filter((product) => {
     const matchesText = `${product.name} ${product.description}`.toLowerCase().includes(query.toLowerCase());
@@ -42,15 +43,16 @@ export default function App() {
           <button><LayoutDashboard size={19} /> Visão geral</button>
           <button className={section === "products" ? "active" : ""} onClick={() => setSection("products")}><Pizza size={19} /> Produtos</button>
           <button className={section === "pizza" ? "active" : ""} onClick={() => setSection("pizza")}><ChefHat size={19} /> Montagem</button>
+          <button className={section === "orders" ? "active" : ""} onClick={() => setSection("orders")}><ClipboardList size={19} /> Pedidos</button>
           <button onClick={() => setSection("public")}><Store size={19} /> Ver cardápio</button>
           <button onClick={addCategory}><Tags size={19} /> Categorias</button>
         </nav>
-        <div className="wave-card"><small>DESENVOLVIMENTO</small><strong>Onda 4 de 8</strong><span>Cardápio e carrinho</span><div><i style={{ width: "50%" }} /></div></div>
+        <div className="wave-card"><small>DESENVOLVIMENTO</small><strong>Onda 5 de 8</strong><span>Pedidos e central</span><div><i style={{ width: "62.5%" }} /></div></div>
       </aside>
 
       <main>
-        <header className="topbar"><div><span>Painel administrativo</span><strong>{section === "pizza" ? "Montagem de pizzas" : "Catálogo"}</strong></div><div className="topbar-actions"><span className="data-status" title={isSupabaseConfigured ? "Supabase conectado" : "Os dados ficam salvos neste navegador"}>{isSupabaseConfigured ? <Cloud size={15} /> : <Database size={15} />}{isSupabaseConfigured ? "Nuvem conectada" : "Salvo neste dispositivo"}</span><button className="store-status"><i /> Loja aberta</button></div></header>
-        {section === "pizza" ? <PizzaSettings /> : <section className="content">
+        <header className="topbar"><div><span>Painel administrativo</span><strong>{section === "pizza" ? "Montagem de pizzas" : section === "orders" ? "Central de pedidos" : "Catálogo"}</strong></div><div className="topbar-actions"><span className="data-status" title={isSupabaseConfigured ? "Supabase conectado" : "Os dados ficam salvos neste navegador"}>{isSupabaseConfigured ? <Cloud size={15} /> : <Database size={15} />}{isSupabaseConfigured ? "Nuvem conectada" : "Salvo neste dispositivo"}</span><button className="store-status"><i /> Loja aberta</button></div></header>
+        {section === "pizza" ? <PizzaSettings /> : section === "orders" ? <OrdersBoard /> : <section className="content">
           <div className="title-row"><div><p className="eyebrow">GESTÃO DO CARDÁPIO</p><h1>Produtos</h1><p>Cadastre os itens que aparecerão no cardápio da Braseira Pizza.</p></div><button className="primary" onClick={() => setShowForm(true)}><PackagePlus size={18} /> Novo produto</button></div>
 
           <div className="stats">
