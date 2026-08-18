@@ -17,3 +17,11 @@ export type Product = {
 export type PizzaSize = { id: string; name: string; slices: number; maxFlavors: number; basePrice: number; active: boolean };
 export type PizzaFlavor = { id: string; name: string; ingredients: string; priceBySize: Record<string, number>; active: boolean };
 export type PizzaOption = { id: string; name: string; price: number; active: boolean };
+
+export type CartItem = { id: string; name: string; detail: string; price: number; quantity: number };
+export type OrderStatus = "pending" | "confirmed" | "preparing" | "ready" | "delivered" | "cancelled";
+export type Order = {
+  id: string; number: number; customerName: string; phone: string; deliveryType: "delivery" | "pickup";
+  address: string; paymentMethod: "pix" | "cash" | "card"; changeFor?: number; notes: string;
+  items: CartItem[]; subtotal: number; deliveryFee: number; total: number; status: OrderStatus; createdAt: string;
+};
