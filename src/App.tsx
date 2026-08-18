@@ -53,7 +53,7 @@ export default function App() {
           <button onClick={() => setSection("public")}><Store size={19} /> Ver cardápio</button>
           <button onClick={addCategory}><Tags size={19} /> Categorias</button>
         </nav>
-        <div className="wave-card"><small>DESENVOLVIMENTO</small><strong>Onda 7 de 8</strong><span>Operação e relatórios</span><div><i style={{ width: "87.5%" }} /></div></div>
+        <div className="wave-card"><small>DESENVOLVIMENTO</small><strong>Onda 8 de 8</strong><span>Validação e segurança</span><div><i style={{ width: "100%" }} /></div></div>
       </aside>
 
       <main>
