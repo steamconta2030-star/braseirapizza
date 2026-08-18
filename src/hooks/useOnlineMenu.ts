@@ -56,7 +56,7 @@ export function useOnlineMenu() {
         name: row.name,
         description: row.description,
         price: Number(row.price),
-        imageUrl: row.image_path ? supabase!.storage.from("product-images").getPublicUrl(row.image_path).data.publicUrl : "",
+        imageUrl: row.image_path ? (/^https?:\/\//.test(row.image_path) ? row.image_path : supabase!.storage.from("product-images").getPublicUrl(row.image_path).data.publicUrl) : "",
         active: row.active,
       }));
       const sizes: PizzaSize[] = (sizesResult.data ?? []).map((row) => ({
