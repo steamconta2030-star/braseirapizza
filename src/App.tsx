@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
-import { ChefHat, Cloud, Database, Eye, EyeOff, Flame, LayoutDashboard, PackagePlus, Pizza, Search, Tags } from "lucide-react";
+import { ChefHat, Cloud, Database, Eye, EyeOff, Flame, LayoutDashboard, PackagePlus, Pizza, Search, Store, Tags } from "lucide-react";
 import PizzaSettings from "./components/PizzaSettings";
+import PublicMenu from "./components/PublicMenu";
 import { initialCategories, initialProducts } from "./data/catalog";
 import { usePersistentState } from "./hooks/usePersistentState";
 import { isSupabaseConfigured } from "./lib/supabase";
@@ -14,7 +15,7 @@ export default function App() {
   const [query, setQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [showForm, setShowForm] = useState(false);
-  const [section, setSection] = useState<"products" | "pizza">("pizza");
+  const [section, setSection] = useState<"products" | "pizza" | "public">("public");
 
   const visible = useMemo(() => products.filter((product) => {
     const matchesText = `${product.name} ${product.description}`.toLowerCase().includes(query.toLowerCase());
@@ -31,6 +32,8 @@ export default function App() {
     setCategories((current) => [...current, { id: crypto.randomUUID(), name, active: true }]);
   }
 
+  if (section === "public") return <PublicMenu onBack={() => setSection("pizza")} />;
+
   return (
     <div className="app-shell">
       <aside className="sidebar">
@@ -39,9 +42,10 @@ export default function App() {
           <button><LayoutDashboard size={19} /> Visão geral</button>
           <button className={section === "products" ? "active" : ""} onClick={() => setSection("products")}><Pizza size={19} /> Produtos</button>
           <button className={section === "pizza" ? "active" : ""} onClick={() => setSection("pizza")}><ChefHat size={19} /> Montagem</button>
+          <button onClick={() => setSection("public")}><Store size={19} /> Ver cardápio</button>
           <button onClick={addCategory}><Tags size={19} /> Categorias</button>
         </nav>
-        <div className="wave-card"><small>DESENVOLVIMENTO</small><strong>Onda 3 de 8</strong><span>Pizzas e complementos</span><div><i style={{ width: "37.5%" }} /></div></div>
+        <div className="wave-card"><small>DESENVOLVIMENTO</small><strong>Onda 4 de 8</strong><span>Cardápio e carrinho</span><div><i style={{ width: "50%" }} /></div></div>
       </aside>
 
       <main>
