@@ -94,3 +94,8 @@ main { min-width: 0; }.topbar { height: 84px; background: #fffdfa; border-bottom
 @media (max-width:650px) { .store-settings-card > footer, .store-operation { align-items:stretch; flex-direction:column; }.store-settings-card > footer button { justify-content:center; } }
 .order-success .whatsapp-order { width:100%; display:flex; justify-content:center; align-items:center; gap:8px; margin-bottom:9px; background:#208b4c; }
 .order-success .back-menu { width:100%; color:#6f625a; background:#eee6df; }
+.new-order-alert { margin:18px 0 -8px; padding:13px 16px; display:flex; align-items:center; gap:11px; color:#276a34; background:#e5f4e7; border:1px solid #bfe0c4; border-radius:13px; animation:newOrderPulse .8s ease-in-out 2; }
+.new-order-alert strong, .new-order-alert span { display:block; }.new-order-alert span { margin-top:2px; font-size:10px; }
+.order-card.just-arrived { box-shadow:0 0 0 3px #56a86155, 0 14px 35px #347d3e20; }
+.wave-card.complete { background:linear-gradient(135deg,#254d2d,#3f7d48); }
+@keyframes newOrderPulse { 50% { transform:scale(1.012); } }
