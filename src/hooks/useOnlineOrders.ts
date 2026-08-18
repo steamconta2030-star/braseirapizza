@@ -6,6 +6,7 @@ export function useOnlineOrders() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [couriers, setCouriers] = useState<Courier[]>([]);
   const [error, setError] = useState("");
+  const [newOrderId, setNewOrderId] = useState("");
 
   const refresh = useCallback(async () => {
     if (!supabase) return;
@@ -30,7 +31,23 @@ export function useOnlineOrders() {
     refresh();
     const client = supabase;
     if (!client) return;
-    const channel = client.channel(`braseira-orders-${crypto.randomUUID()}`).on("postgres_changes", { event: "*", schema: "public", table: "orders" }, refresh).subscribe();
+    const channel = client.channel(`braseira-orders-${crypto.randomUUID()}`).on("postgres_changes", { event: "*", schema: "public", table: "orders" }, (payload) => {
+      if (payload.eventType === "INSERT") {
+        const id = String((payload.new as { id?: string }).id ?? "");
+        setNewOrderId(id);
+        document.title = "🔔 Novo pedido • Braseira";
+        try {
+          const AudioContextClass = window.AudioContext || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+          if (AudioContextClass) {
+            const audio = new AudioContextClass(); const oscillator = audio.createOscillator(); const gain = audio.createGain();
+            oscillator.connect(gain); gain.connect(audio.destination); oscillator.frequency.value = 880; gain.gain.value = 0.08;
+            oscillator.start(); oscillator.stop(audio.currentTime + 0.22);
+          }
+        } catch { /* Alguns navegadores exigem interação antes de liberar áudio. */ }
+        window.setTimeout(() => { setNewOrderId(""); document.title = "Braseira Pizza"; }, 8000);
+      }
+      refresh();
+    }).subscribe();
     return () => { client.removeChannel(channel); };
   }, [refresh]);
 
@@ -46,5 +63,5 @@ export function useOnlineOrders() {
     if (updateError) { setError("Não foi possível atribuir o entregador."); refresh(); }
   }
 
-  return { orders, couriers, error, updateStatus, assignCourier, refresh };
+  return { orders, couriers, error, newOrderId, updateStatus, assignCourier, refresh };
 }
