@@ -10,7 +10,7 @@ import type { CartItem, Order, Product } from "../types";
 const money = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 
 export default function PublicMenu({ onBack }: { onBack: () => void }) {
-  const { products, categories, sizes, flavors, crusts, extras, zones, online } = useOnlineMenu();
+  const { products, categories, sizes, flavors, crusts, extras, zones, online, storeOpen } = useOnlineMenu();
   const [cart, setCart] = usePersistentState<CartItem[]>("braseira:cart", []);
   const [orders, setOrders] = usePersistentState<Order[]>("braseira:orders", []);
   const [activeCategory, setActiveCategory] = useState("all");
@@ -58,6 +58,7 @@ export default function PublicMenu({ onBack }: { onBack: () => void }) {
   function quantity(id: string, delta: number) { setCart((current) => current.map((item) => item.id === id ? { ...item, quantity: item.quantity + delta } : item).filter((item) => item.quantity > 0)); }
   async function finishOrder(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); const data = new FormData(event.currentTarget);
+    if (!storeOpen) { window.alert("A Braseira está fechada para novos pedidos no momento."); return; }
     const deliveryType = checkoutDeliveryType; const deliveryFee = checkoutFee;
     const zoneName = selectedZone?.neighborhood ?? "";
     const draft: Order = { id: crypto.randomUUID(), number: Math.max(0, ...orders.map((item) => item.number)) + 1, customerName: String(data.get("name")), phone: String(data.get("phone")), deliveryType, address: deliveryType === "delivery" ? `${String(data.get("address"))} • ${zoneName}` : "", paymentMethod: String(data.get("paymentMethod")) as Order["paymentMethod"], changeFor: Number(data.get("changeFor")) || undefined, notes: String(data.get("notes") ?? ""), items: cart, subtotal: cartTotal, deliveryFee, total: cartTotal + deliveryFee, status: "pending", createdAt: new Date().toISOString() };
@@ -82,7 +83,7 @@ export default function PublicMenu({ onBack }: { onBack: () => void }) {
   }
 
   return <div className="public-menu">
-    <header className="public-header"><button className="back-admin" onClick={onBack}><ArrowLeft size={17} /> Administração</button><div className="public-brand"><span><Flame size={22} /></span><div><strong>Braseira Pizza</strong><small>{online ? "Cardápio online • Feita no fogo" : "Feita no fogo. Feita para você."}</small></div></div><button className="cart-button" onClick={() => setCartOpen(true)}><ShoppingBag size={19} /><span>{cartCount}</span><b>{money.format(cartTotal)}</b></button></header>
+    <header className="public-header"><button className="back-admin" onClick={onBack}><ArrowLeft size={17} /> Administração</button><div className="public-brand"><span><Flame size={22} /></span><div><strong>Braseira Pizza</strong><small>{online ? `Cardápio online • ${storeOpen ? "Loja aberta" : "Loja fechada"}` : "Feita no fogo. Feita para você."}</small></div></div><button className="cart-button" onClick={() => setCartOpen(true)}><ShoppingBag size={19} /><span>{cartCount}</span><b>{money.format(cartTotal)}</b></button></header>
     <section className="public-hero"><div><small>🔥 FORNO QUENTE • ENTREGA RÁPIDA</small><h1>Sua pizza, do seu jeito.</h1><p>Escolha o tamanho, combine seus sabores favoritos e deixe o resto com a Braseira.</p><button onClick={() => setBuilderOpen(true)}>Montar minha pizza <Plus size={18} /></button></div><div className="hero-pizza"><i /><span>Até 3 sabores</span></div></section>
     <nav className="category-pills"><button className={activeCategory === "all" ? "active" : ""} onClick={() => setActiveCategory("all")}>Todos</button>{categories.filter((item) => item.active).map((item) => <button key={item.id} className={activeCategory === item.id ? "active" : ""} onClick={() => setActiveCategory(item.id)}>{item.name}</button>)}</nav>
     <main className="menu-content"><div className="menu-title"><div><small>NOSSO CARDÁPIO</small><h2>Escolha o seu pedido</h2></div><span>{filteredProducts.length + 1} opções disponíveis</span></div><div className="menu-grid"><article className="menu-card build-card"><div className="menu-photo pizza-photo"><span>Monte do seu jeito</span></div><div><small>PIZZAS</small><h3>Monte sua pizza</h3><p>Escolha tamanho, sabores, borda e adicionais.</p><footer><strong>A partir de {money.format(Math.min(...sizes.map((item) => item.basePrice)))}</strong><button onClick={() => setBuilderOpen(true)}>Montar</button></footer></div></article>{filteredProducts.map((product) => <article className="menu-card" key={product.id}><div className="menu-photo">{product.imageUrl ? <img src={product.imageUrl} alt={product.name} /> : <Flame size={34} />}</div><div><small>{categories.find((item) => item.id === product.categoryId)?.name}</small><h3>{product.name}</h3><p>{product.description}</p><footer><strong>{money.format(product.price)}</strong><button onClick={() => addProduct(product)}><Plus size={18} /></button></footer></div></article>)}</div></main>
