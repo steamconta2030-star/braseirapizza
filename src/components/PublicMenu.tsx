@@ -4,6 +4,7 @@ import { ArrowLeft, Check, CheckCircle2, Flame, Minus, Plus, ShoppingBag, Trash2
 import { initialZones } from "../data/delivery";
 import { usePersistentState } from "../hooks/usePersistentState";
 import { useOnlineMenu } from "../hooks/useOnlineMenu";
+import { supabase } from "../lib/supabase";
 import type { CartItem, Order, Product } from "../types";
 
 const money = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
@@ -48,19 +49,36 @@ export default function PublicMenu({ onBack }: { onBack: () => void }) {
     if (!flavorIds.length) return;
     const crust = crusts.find((item) => item.id === crustId);
     const selectedExtras = extras.filter((item) => extraIds.includes(item.id));
-    setCart((current) => [...current, { id: crypto.randomUUID(), name: `Pizza ${size.name}`, detail: `${chosenFlavors.map((item) => item.name).join(" + ")} • ${crust?.name}${selectedExtras.length ? ` • ${selectedExtras.map((item) => item.name).join(", ")}` : ""}`, price: pizzaTotal, quantity: 1 }]);
+    setCart((current) => [...current, { id: crypto.randomUUID(), name: `Pizza ${size.name}`, detail: `${chosenFlavors.map((item) => item.name).join(" + ")} • ${crust?.name}${selectedExtras.length ? ` • ${selectedExtras.map((item) => item.name).join(", ")}` : ""}`, price: pizzaTotal, quantity: 1, source: { kind: "pizza", sizeId: size.id, flavorIds, crustId: crust?.id, extraIds } }]);
     setBuilderOpen(false); setCartOpen(true); setFlavorIds([]); setExtraIds([]); setCrustId(crusts[0]?.id ?? "");
   }
   function addProduct(product: Product) {
-    setCart((current) => { const existing = current.find((item) => item.id === product.id); return existing ? current.map((item) => item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item) : [...current, { id: product.id, name: product.name, detail: product.description, price: product.price, quantity: 1 }]; });
+    setCart((current) => { const existing = current.find((item) => item.id === product.id); return existing ? current.map((item) => item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item) : [...current, { id: product.id, name: product.name, detail: product.description, price: product.price, quantity: 1, source: { kind: "product", productId: product.id } }]; });
   }
   function quantity(id: string, delta: number) { setCart((current) => current.map((item) => item.id === id ? { ...item, quantity: item.quantity + delta } : item).filter((item) => item.quantity > 0)); }
-  function finishOrder(event: FormEvent<HTMLFormElement>) {
+  async function finishOrder(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); const data = new FormData(event.currentTarget);
     const deliveryType = checkoutDeliveryType; const deliveryFee = checkoutFee;
     const zoneName = selectedZone?.neighborhood ?? "";
-    const order: Order = { id: crypto.randomUUID(), number: Math.max(0, ...orders.map((item) => item.number)) + 1, customerName: String(data.get("name")), phone: String(data.get("phone")), deliveryType, address: deliveryType === "delivery" ? `${String(data.get("address"))} • ${zoneName}` : "", paymentMethod: String(data.get("paymentMethod")) as Order["paymentMethod"], changeFor: Number(data.get("changeFor")) || undefined, notes: String(data.get("notes") ?? ""), items: cart, subtotal: cartTotal, deliveryFee, total: cartTotal + deliveryFee, status: "pending", createdAt: new Date().toISOString() };
-    setOrders((current) => [order, ...current]); setCart([]); setCheckoutOpen(false); setCartOpen(false); setCompletedOrder(order);
+    const draft: Order = { id: crypto.randomUUID(), number: Math.max(0, ...orders.map((item) => item.number)) + 1, customerName: String(data.get("name")), phone: String(data.get("phone")), deliveryType, address: deliveryType === "delivery" ? `${String(data.get("address"))} • ${zoneName}` : "", paymentMethod: String(data.get("paymentMethod")) as Order["paymentMethod"], changeFor: Number(data.get("changeFor")) || undefined, notes: String(data.get("notes") ?? ""), items: cart, subtotal: cartTotal, deliveryFee, total: cartTotal + deliveryFee, status: "pending", createdAt: new Date().toISOString() };
+    try {
+      if (!supabase || !online) throw new Error("O cardápio online está indisponível no momento.");
+      if (cart.some((item) => !item.source)) throw new Error("Atualize o cardápio e monte novamente o pedido.");
+      const payload = {
+        customer_name: draft.customerName, phone: draft.phone, delivery_type: deliveryType,
+        address: String(data.get("address") ?? ""), delivery_zone_id: deliveryType === "delivery" ? checkoutZoneId : null,
+        payment_method: draft.paymentMethod, change_for: draft.changeFor ?? null, notes: draft.notes,
+        items: cart.map((item) => item.source?.kind === "product"
+          ? { kind: "product", product_id: item.source.productId, quantity: item.quantity }
+          : { kind: "pizza", size_id: item.source!.sizeId, flavor_ids: item.source!.flavorIds, crust_id: item.source!.crustId ?? null, extra_ids: item.source!.extraIds, quantity: item.quantity }),
+      };
+      const { data: saved, error } = await supabase.rpc("create_public_order", { payload });
+      if (error) throw error;
+      const order: Order = { ...draft, id: String(saved.id), number: Number(saved.number), subtotal: Number(saved.subtotal), deliveryFee: Number(saved.delivery_fee), total: Number(saved.total), createdAt: String(saved.created_at) };
+      setOrders((current) => [order, ...current.filter((item) => item.id !== order.id)]); setCart([]); setCheckoutOpen(false); setCartOpen(false); setCompletedOrder(order);
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : "Não foi possível enviar o pedido. Tente novamente.");
+    }
   }
 
   return <div className="public-menu">
