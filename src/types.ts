@@ -18,7 +18,10 @@ export type PizzaSize = { id: string; name: string; slices: number; maxFlavors: 
 export type PizzaFlavor = { id: string; name: string; ingredients: string; priceBySize: Record<string, number>; active: boolean };
 export type PizzaOption = { id: string; name: string; price: number; active: boolean };
 
-export type CartItem = { id: string; name: string; detail: string; price: number; quantity: number };
+export type CartItem = {
+  id: string; name: string; detail: string; price: number; quantity: number;
+  source?: { kind: "product"; productId: string } | { kind: "pizza"; sizeId: string; flavorIds: string[]; crustId?: string; extraIds: string[] };
+};
 export type OrderStatus = "pending" | "confirmed" | "preparing" | "ready" | "delivered" | "cancelled";
 export type Order = {
   id: string; number: number; customerName: string; phone: string; deliveryType: "delivery" | "pickup";
