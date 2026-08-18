@@ -95,7 +95,7 @@ export default function App() {
           <button onClick={() => setSection("public")}><Store size={19} /> Ver cardápio</button>
           <button onClick={addCategory}><Tags size={19} /> Categorias</button>
         </nav>
-        <div className="wave-card"><small>NOVA FASE</small><strong>Onda 10 de 12</strong><span>Configurações comerciais</span><div><i style={{ width: "83%" }} /></div></div>
+        <div className="wave-card"><small>NOVA FASE</small><strong>Onda 11 de 12</strong><span>Confirmação pelo WhatsApp</span><div><i style={{ width: "92%" }} /></div></div>
       </aside>
 
       <main>
