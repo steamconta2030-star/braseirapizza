@@ -74,3 +74,21 @@ main { min-width: 0; }.topbar { height: 84px; background: #fffdfa; border-bottom
 .store-status { cursor:pointer; font-weight:800; }
 .store-status.closed { color:#991b1b; border-color:#fecaca; background:#fef2f2; }
 .store-status.closed i { background:#dc2626; }
+.store-settings-card { max-width:760px; margin-top:28px; padding:22px; display:grid; gap:20px; background:#fffdfa; border:1px solid #e5d9cf; border-radius:18px; }
+.store-settings-card > label { display:grid; gap:7px; color:#57483f; font-size:12px; font-weight:800; }
+.store-settings-card > label input { padding:12px 13px; border:1px solid #d9cbc1; border-radius:10px; background:white; font:inherit; }
+.store-settings-card > label small { color:#8b7d74; font-weight:400; }
+.store-settings-card > footer { display:flex; align-items:center; justify-content:space-between; gap:15px; padding-top:17px; border-top:1px solid #ebe1d9; color:#3d7b44; font-size:11px; }
+.store-operation { display:flex; justify-content:space-between; align-items:center; gap:16px; padding:16px; border-radius:14px; }
+.store-operation > div { display:flex; align-items:center; gap:11px; }
+.store-operation > div > span { width:40px; height:40px; display:grid; place-items:center; border-radius:11px; }
+.store-operation strong, .store-operation small { display:block; }
+.store-operation small { margin-top:3px; font-size:10px; font-weight:400; }
+.store-operation button { padding:10px 13px; border-radius:10px; font-weight:800; cursor:pointer; }
+.store-operation.open { color:#316f39; background:#e8f4e8; border:1px solid #cfe6d0; }
+.store-operation.open > div > span { background:#d6ead7; }
+.store-operation.open button { color:#9b3020; border:1px solid #e6b5ab; background:#fff8f5; }
+.store-operation.closed { color:#8a3022; background:#fdf0ed; border:1px solid #efcbc4; }
+.store-operation.closed > div > span { background:#f5dcd7; }
+.store-operation.closed button { color:white; border:1px solid #378144; background:#408d4c; }
+@media (max-width:650px) { .store-settings-card > footer, .store-operation { align-items:stretch; flex-direction:column; }.store-settings-card > footer button { justify-content:center; } }
