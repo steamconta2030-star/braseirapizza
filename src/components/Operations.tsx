@@ -1,10 +1,11 @@
 import { Banknote, BarChart3, ChefHat, Clock3, CreditCard, Flame, PackageCheck, QrCode, ShoppingBag } from "lucide-react";
 import { usePersistentState } from "../hooks/usePersistentState";
+import { useOnlineOrders } from "../hooks/useOnlineOrders";
 import type { CashSession, Order, OrderStatus } from "../types";
 const money = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 
 export default function Operations({ view }: { view: "dashboard" | "kitchen" | "cash" }) {
-  const [orders, setOrders] = usePersistentState<Order[]>("braseira:orders", []);
+  const { orders, updateStatus } = useOnlineOrders();
   const [cash, setCash] = usePersistentState<CashSession[]>("braseira:cash-sessions", []);
   const today = new Date().toISOString().slice(0, 10);
   const todayOrders = orders.filter((order) => order.createdAt.slice(0, 10) === today && order.status !== "cancelled");
@@ -12,7 +13,7 @@ export default function Operations({ view }: { view: "dashboard" | "kitchen" | "
   const revenue = completed.reduce((sum, order) => sum + order.total, 0);
   const orderedRevenue = todayOrders.reduce((sum, order) => sum + order.total, 0);
   const activeCash = cash.find((session) => !session.closedAt);
-  function move(id: string, status: OrderStatus) { setOrders((current) => current.map((order) => order.id === id ? { ...order, status } : order)); }
+  function move(id: string, status: OrderStatus) { updateStatus(id, status); }
   function openCash() { const value = Number(window.prompt("Valor inicial do caixa:", "150")?.replace(",", ".") ?? 0); setCash((current) => [{ id: crypto.randomUUID(), openedAt: new Date().toISOString(), openingAmount: value }, ...current]); }
   function closeCash() { if (!activeCash) return; const value = Number(window.prompt("Valor contado no caixa:", String(activeCash.openingAmount + revenue))?.replace(",", ".") ?? 0); setCash((current) => current.map((session) => session.id === activeCash.id ? { ...session, closedAt: new Date().toISOString(), closingAmount: value } : session)); }
 
