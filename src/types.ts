@@ -27,3 +27,4 @@ export type Order = {
 };
 export type DeliveryZone = { id: string; neighborhood: string; fee: number; etaMinutes: number; active: boolean };
 export type Courier = { id: string; name: string; phone: string; vehicle: string; active: boolean };
+export type CashSession = { id: string; openedAt: string; openingAmount: number; closedAt?: string; closingAmount?: number };
