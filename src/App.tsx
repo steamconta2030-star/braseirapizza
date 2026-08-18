@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import type { FormEvent } from "react";
 import { Banknote, Bike, ChefHat, ClipboardList, Cloud, CookingPot, Database, Eye, EyeOff, Flame, LayoutDashboard, PackagePlus, Pizza, Search, Store, Tags } from "lucide-react";
 import PizzaSettings from "./components/PizzaSettings";
 import PublicMenu from "./components/PublicMenu";
@@ -7,15 +8,15 @@ import DeliverySettings from "./components/DeliverySettings";
 import Operations from "./components/Operations";
 import AdminAuth from "./components/AdminAuth";
 import { initialCategories, initialProducts } from "./data/catalog";
-import { usePersistentState } from "./hooks/usePersistentState";
-import { isSupabaseConfigured } from "./lib/supabase";
+import { isSupabaseConfigured, supabase } from "./lib/supabase";
 import type { Category, Product } from "./types";
 
 const money = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
+const STORE_ID = "10000000-0000-4000-8000-000000000001";
 
 export default function App() {
-  const [categories, setCategories] = usePersistentState<Category[]>("braseira:categories", initialCategories);
-  const [products, setProducts] = usePersistentState<Product[]>("braseira:products", initialProducts);
+  const [categories, setCategories] = useState<Category[]>(initialCategories);
+  const [products, setProducts] = useState<Product[]>(initialProducts);
   const [query, setQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [showForm, setShowForm] = useState(false);
@@ -26,14 +27,37 @@ export default function App() {
     return matchesText && (categoryFilter === "all" || product.categoryId === categoryFilter);
   }), [products, query, categoryFilter]);
 
-  function toggleProduct(id: string) {
-    setProducts((current) => current.map((product) => product.id === id ? { ...product, active: !product.active } : product));
+  useEffect(() => {
+    if (!supabase) return;
+    Promise.all([
+      supabase.from("categories").select("id,name,active").eq("store_id", STORE_ID).order("position"),
+      supabase.from("products").select("id,category_id,name,description,price,image_path,active").eq("store_id", STORE_ID).order("position"),
+    ]).then(([categoryResult, productResult]) => {
+      if (categoryResult.data) setCategories(categoryResult.data.map((row) => ({ id: row.id, name: row.name, active: row.active })));
+      if (productResult.data) setProducts(productResult.data.map((row) => ({ id: row.id, categoryId: row.category_id, name: row.name, description: row.description, price: Number(row.price), imageUrl: row.image_path ?? "", active: row.active })));
+    });
+  }, []);
+
+  async function toggleProduct(id: string) {
+    const product = products.find((item) => item.id === id); if (!product || !supabase) return;
+    setProducts((current) => current.map((item) => item.id === id ? { ...item, active: !item.active } : item));
+    const { error } = await supabase.from("products").update({ active: !product.active, updated_at: new Date().toISOString() }).eq("id", id);
+    if (error) setProducts((current) => current.map((item) => item.id === id ? product : item));
   }
 
-  function addCategory() {
+  async function addCategory() {
     const name = window.prompt("Nome da nova categoria:")?.trim();
-    if (!name) return;
-    setCategories((current) => [...current, { id: crypto.randomUUID(), name, active: true }]);
+    if (!name || !supabase) return;
+    const { data, error } = await supabase.from("categories").insert({ store_id: STORE_ID, name, position: categories.length, active: true }).select("id,name,active").single();
+    if (!error && data) setCategories((current) => [...current, { id: data.id, name: data.name, active: data.active }]);
+  }
+
+  async function addProduct(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault(); if (!supabase) return;
+    const data = new FormData(event.currentTarget);
+    const input = { store_id: STORE_ID, name: String(data.get("name")), description: String(data.get("description")), category_id: String(data.get("category")), price: Number(data.get("price")), image_path: String(data.get("imageUrl") ?? "") || null, position: products.length, active: true };
+    const { data: saved, error } = await supabase.from("products").insert(input).select("id,category_id,name,description,price,image_path,active").single();
+    if (!error && saved) { setProducts((current) => [...current, { id: saved.id, categoryId: saved.category_id, name: saved.name, description: saved.description, price: Number(saved.price), imageUrl: saved.image_path ?? "", active: saved.active }]); setShowForm(false); }
   }
 
   if (section === "public") return <PublicMenu onBack={() => setSection("dashboard")} />;
@@ -79,7 +103,7 @@ export default function App() {
         </section>}
       </main>
 
-      {showForm && <div className="modal-backdrop" onMouseDown={() => setShowForm(false)}><form className="modal" onMouseDown={(e) => e.stopPropagation()} onSubmit={(e) => { e.preventDefault(); const data = new FormData(e.currentTarget); setProducts((current) => [...current, { id: crypto.randomUUID(), name: String(data.get("name")), description: String(data.get("description")), categoryId: String(data.get("category")), price: Number(data.get("price")), imageUrl: String(data.get("imageUrl") ?? ""), active: true }]); setShowForm(false); }}><p className="eyebrow">NOVO ITEM</p><h2>Cadastrar produto</h2><label>Nome<input name="name" required placeholder="Ex.: Pizza Marguerita" /></label><label>Descrição<textarea name="description" required placeholder="Ingredientes e apresentação" /></label><label>Endereço da imagem <span className="optional">(opcional nesta fase)</span><input name="imageUrl" type="url" placeholder="https://..." /></label><div className="form-row"><label>Categoria<select name="category">{categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select></label><label>Preço<input name="price" required min="0" step="0.01" type="number" placeholder="0,00" /></label></div><div className="modal-actions"><button type="button" onClick={() => setShowForm(false)}>Cancelar</button><button className="primary" type="submit">Salvar produto</button></div></form></div>}
+      {showForm && <div className="modal-backdrop" onMouseDown={() => setShowForm(false)}><form className="modal" onMouseDown={(e) => e.stopPropagation()} onSubmit={addProduct}><p className="eyebrow">NOVO ITEM</p><h2>Cadastrar produto</h2><label>Nome<input name="name" required placeholder="Ex.: Pizza Marguerita" /></label><label>Descrição<textarea name="description" required placeholder="Ingredientes e apresentação" /></label><label>Endereço da imagem <span className="optional">(opcional nesta fase)</span><input name="imageUrl" type="url" placeholder="https://..." /></label><div className="form-row"><label>Categoria<select name="category">{categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select></label><label>Preço<input name="price" required min="0" step="0.01" type="number" placeholder="0,00" /></label></div><div className="modal-actions"><button type="button" onClick={() => setShowForm(false)}>Cancelar</button><button className="primary" type="submit">Salvar produto</button></div></form></div>}
     </div>
   </AdminAuth>;
 }
